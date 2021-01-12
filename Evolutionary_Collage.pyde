@@ -1,3 +1,7 @@
+'''
+This is the main Processing sketch
+'''
+
 # Import the Python code modules (.py files) that we need
 from modules import genetic as ga
 from modules import drawing
