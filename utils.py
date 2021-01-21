@@ -29,23 +29,35 @@ def print_shutdown_messages(sketch):
     print("All output was saved to your sketchbook folder in <{}>.".format(outputpath))
     print("Exit.")
 
+
 def configure(obj, config):
     for attr in dir(config):
         if attr.startswith("__"): continue
         if hasattr(obj, attr):
             setattr(obj, attr, getattr(config, attr))
+
     
-def create_report(sketch, config, ga):
+def create_report(sketch, drawing, ga, ic):
+    def underline(lines):
+        #lines.append("".join(["-"] * len(lines[-1]) * 2))
+        lines.append("".join(["-"] * 45))
     runs = RunManager(sketch)
     lines = []
-    lines.append("Settings")
-    lines.append("".join(["-"] * len(lines[-1]) * 2))
-    for attr in dir(config):
-        if attr.startswith("__"): continue
-        lines.append("{} = {}".format(attr, getattr(config, attr)))
-    lines.append(" ")
-    lines.append("Runtime Stats")
-    lines.append("".join(["-"] * len(lines[-1]) * 2))
+    def add_config(obj, lines):
+        for attr in dir(obj):
+            if not attr.startswith("config_"): continue
+            lines.append("{} = {}".format(attr, getattr(obj, attr)))
+    lines.append("Module settings: drawing")
+    underline(lines)
+    add_config(drawing, lines)
+    lines.append("\n\nModule settings: genetic")
+    underline(lines)
+    add_config(ga, lines)
+    lines.append("\n\nModule settings: image_comparator")
+    underline(lines)
+    add_config(ic, lines)
+    lines.append("\n\nRuntime Stats")
+    underline(lines)
     lines.append("Number of generations evolved: {}".format(ga.state.generation_number))
     lines.append("Run time: {}".format(time_str(ga.state.elapsed)))
     filepath = os.path.join(runs.run_dir_path, "report.txt")
@@ -75,21 +87,6 @@ def save_hi_res(sketch, ga, drawing, createGraphics):
     canvas.save(filepath)
     print("Saved hi-res image of fittest in generation {}".format(ga.generation_number()))
     
-
-def configureOBS(obj, path, config):
-    if not path.endswith("."):
-        path = path + "."
-    found = False
-    for key in [k for k in config if k.startswith(path)]:
-        attrname = key[len(path):]
-        if not hasattr(obj, attrname):
-            print("WARNING: the configuation key {} does not exist in module [{}]".format(key, obj.__NAME__))
-            continue 
-        setattr(obj, attrname, config[key])
-        found = True
-    if not found:
-        print("WARNING: no matching configuration keys found for pattern [{}]".format(path[:-1]))
-        
         
 class GraphicsBuffer(object):
     # Enforce a singleton pattern that allows only one instance
@@ -177,6 +174,10 @@ class FrameRateRegulator(object):
 #####################################################################
 # Genetic Python utility functions
 #####################################################################
+
+
+def remap(valuetoscale, minallowed, maxallowed, minold, maxold):
+    return (maxallowed - minallowed) * (valuetoscale - minold) / (maxold - minold) + minallowed
 
 
 class Grid(object):

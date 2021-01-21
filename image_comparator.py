@@ -8,12 +8,13 @@ to a set of sample images and returing a similarity score.
 #from gab.opencv import OpenCV # see https://github.com/atduskgreg/opencv-processing
 import utils
 
+
 # Default settings
-strictness = 3 # 1-5
-threshold = 180 # 0-255 higher value includes lighter grayscale values
-preprocess_mode = "binary" # or "original"
-samplesfolder = "comparator_samples"
-erode_binary = False
+config_strictness = 4 # 1-5
+config_threshold = 230 # 0-255 higher value includes lighter grayscale values
+config_preprocess_mode = "binary"
+config_erode_binary = False
+
 
 sample_images = []
 samples = []
@@ -27,7 +28,7 @@ def toggle_preview():
 
 
 def load_samples(sketch):
-    samplespath = sketch.dataPath(samplesfolder)
+    samplespath = sketch.dataPath("comparator_samples")
     for filepath in utils.listfiles(samplespath, fullpath=True):
         img = sketch.loadImage(filepath)
         if img is not None:
@@ -55,17 +56,17 @@ def draw_preview(sketch):
     
 def img_preprocess(sketch, pImg, erode_binary):
     sizes = [5, 9, 15, 25, 50]
-    i = utils.constrain(int(round(strictness)), 1, len(sizes)) - 1
+    i = utils.constrain(int(round(config_strictness)), 1, len(sizes)) - 1
     img = pImg.copy()
     if img.width > img.height:
         img.resize(sizes[i], 0)
     else:
         img.resize(0, sizes[i])        
-    if preprocess_mode == "binary":
+    if "config_preprocess_mode" in globals() and config_preprocess_mode == "binary":
         if erode_binary:
             img.filter(sketch.ERODE)
         img.filter(sketch.GRAY)
-        img.filter(sketch.THRESHOLD, threshold/255.0)
+        img.filter(sketch.THRESHOLD, config_threshold/255.0)
     pixels = [sketch.brightness(p) for p in img.pixels]
     return img, pixels
 
@@ -79,9 +80,8 @@ def compare(sketch, pImg):
     if not samples:
         load_samples(sketch)
     global last_image # Remember it so we can draw a preview if desired
-    last_image, imgpixels = img_preprocess(sketch, pImg, erode_binary)
+    last_image, imgpixels = img_preprocess(sketch, pImg, config_erode_binary)
     overall_score = 0.0
-    num_samples = len(samples)
     num_pixels = len(imgpixels)
     for samplepixels in samples:
         score = 0.0
@@ -89,9 +89,6 @@ def compare(sketch, pImg):
             score += 1.0 - (abs(samplepixels[i] - imgpixels[i]) / 255.0)
         score /= num_pixels # Mean error for all pixel comparisions for this sample
         overall_score += score
-    overall_score /= num_samples # Mean error for all sample comparisons
+    overall_score /= len(samples) # Mean error for all sample comparisons
     return overall_score
     
-
-
-

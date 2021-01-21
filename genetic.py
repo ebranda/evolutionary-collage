@@ -7,14 +7,14 @@ import time
 import math
 import utils
 
+
 # Settings
-mutation_rate = 0.08
-fitness_decimal_places = 4
+config_mutation_rate = 0.08
+config_fitness_decimal_places = 4
 max_stagnant_generations = 1000
 update_interval = 10
 verbose = False
-genome_size = None
-population_size = None
+
 
 # Callback functions
 phenotype_function = None
@@ -71,7 +71,7 @@ class Individual:
     def update(self, phenotype_func, fitness_func):
         self.phenotype = phenotype_func(self.genes)
         score = fitness_func(self.phenotype)
-        self.fitness = round(score, fitness_decimal_places) # Round so we don't waste time on trivial fitness changes
+        self.fitness = round(score, config_fitness_decimal_places) # Round so we don't waste time on trivial fitness changes
         
     def fitter_than(self, other):
         return self.fitness > other.fitness
@@ -132,10 +132,10 @@ class EvolverState(object):
 population = Population()
 state = EvolverState()
 
-def initialize():
+def initialize(genome_size):
     ''' Initialize the population and evolver state.'''
-    popsize = population_size if population_size else int(round(genome_size * 1.75))
-    utils.validate_set("genome_size", genome_size)
+    if population.initialized: return
+    popsize = int(round(genome_size * 1.75))
     utils.validate_set("phenotype_function", phenotype_function)
     utils.validate_set("fitness_function", fitness_function)
     firstgen = [Individual().randomize(genome_size) for i in range(popsize)]
@@ -146,12 +146,11 @@ def evolve():
     ''' Evolve a generation.
     
     This is the main heartbeat of the evolver. Call it from a loop.
-    Handles just-in-time initialization.
     '''
+    # Check initialized
     if not population.initialized:
-        print("Starting search...")
-        initialize()
-            
+        raise RuntimeError("ERROR: You must call initialize() on the genetic module before calling evolve()")
+        
     # Make sure the search is not over
     if state.finished: return
     
@@ -159,7 +158,7 @@ def evolve():
     newgen = []
     for i in range(len(population.individuals)):
         parent1, parent2 = population.random_parents()
-        child = parent1.breed_with(parent2, mutation_rate)
+        child = parent1.breed_with(parent2, config_mutation_rate)
         newgen.append(child)
     population.update(newgen, phenotype_function, fitness_function)
     

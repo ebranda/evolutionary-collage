@@ -1,19 +1,17 @@
 # Import the Python code modules (.py files) that we need
-from modules import genetic as ga
-from modules import drawing
-from modules import utils
-from modules import image_comparator as ic
+import genetic as ga
+import drawing
+import utils
+import image_comparator as ic
 import config
 
 
 def setup():
     size(400, 400)
-    utils.configure(drawing, config)
-    utils.configure(ic, config)
-    utils.configure(ga, config)
-    ga.genome_size = drawing.genes_per_shape * drawing.number_of_shapes
     ga.phenotype_function = create_phenotype
     ga.fitness_function = compute_fitness
+    genome_size = drawing.config_genes_per_shape * drawing.config_number_of_shapes
+    ga.initialize(genome_size)
     utils.print_startup_messages(this)
     
 
@@ -38,7 +36,7 @@ def keyPressed():
 
 def stop():
     utils.save_hi_res(this, ga, drawing, createGraphics)
-    utils.create_report(this, config, ga)
+    utils.create_report(this, drawing, ga, ic)
     utils.print_shutdown_messages(this)
 
 
