@@ -8,6 +8,7 @@ import os
 import math
 import time
 import random
+from distutils.dir_util import copy_tree
     
     
 def save_low_res(sketch, ga):
@@ -15,7 +16,7 @@ def save_low_res(sketch, ga):
     runs = RunManager(sketch)
     create_folder(runs.run_dir_path)
     filename = "generation-{0:04d}.png".format(ga.generation_number())
-    filepath = os.path.join(runs.run_dir_path, filename)
+    filepath = os.path.join(runs.run_dir_path, "output", filename)
     image = sketch.get()
     image.save(filepath)
 
@@ -31,9 +32,9 @@ def save_hi_res(sketch, ga, drawing, createGraphics):
     drawing.render(sketch, ga.fittest().genes, canvas)
     canvas.endDraw()
     filename = "generation-{0:04d}-hi-res.png".format(ga.generation_number())
-    filepath = os.path.join(runs.run_dir_path, filename)
+    filepath = os.path.join(runs.run_dir_path, "output", filename)
     canvas.save(filepath)
-    print("Saved hi-res image of fittest in generation {}".format(ga.generation_number()))
+    #print("Saved hi-res image of fittest in generation {}".format(ga.generation_number()))
     
 
 def create_report(sketch, drawing, ga, ic):
@@ -56,13 +57,18 @@ def create_report(sketch, drawing, ga, ic):
     lines.append("\n\nModule settings: image_comparator")
     underline(lines)
     add_config(ic, lines)
-    lines.append("\n\nRuntime Stats")
-    underline(lines)
-    lines.append("Number of generations evolved: {}".format(ga.state.generation_number))
-    lines.append("Run time: {}".format(time_str(ga.state.elapsed)))
+    #lines.append("\n\nRuntime Stats")
+    #underline(lines)
+    #lines.append("Number of generations evolved: {}".format(ga.state.generation_number))
+    #lines.append("Run time: {}".format(time_str(ga.state.elapsed)))
     filepath = os.path.join(runs.run_dir_path, "report.txt")
     write_strings_to_file(filepath, lines)
     
+
+def copy_input_images(sketch):
+    copy_folder_to(sketch.dataPath("parts"), os.path.join(run_dir_path(sketch), "data", "parts"))
+    copy_folder_to(sketch.dataPath("comparator_samples"), os.path.join(run_dir_path(sketch), "data", "comparator_samples"))
+
 
 def run_dir_path(sketch):
     return RunManager(sketch).run_dir_path
@@ -70,6 +76,18 @@ def run_dir_path(sketch):
 
 def run_number(sketch):
     return RunManager(sketch).run_number
+
+
+def toggle_paused():
+    global paused
+    if not is_paused():
+        paused = True
+    else:
+        paused = False
+        
+
+def is_paused():
+    return "paused" in globals() and paused
     
     
 class RunManager(object):
@@ -162,6 +180,10 @@ class FrameRateRegulator(object):
 #####################################################################
 # Generic Python helpers
 #####################################################################
+
+
+def copy_folder_to(folderpath, targetdir):
+    copy_tree(folderpath, targetdir)
 
 
 def remap(valuetoscale, minallowed, maxallowed, minold, maxold):

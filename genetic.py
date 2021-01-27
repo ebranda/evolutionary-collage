@@ -91,7 +91,6 @@ class EvolverState(object):
     def __init__(self):
         self.reset()
         self.max_gens = 0
-        self.fitness_changed = False
     
     def reset(self):
         self.generation_number = 0
@@ -99,6 +98,7 @@ class EvolverState(object):
         self.high_score = None
         self.start_time = time.time()
         self.end_time = None
+        self.fitness_changed = True
     
     def new_generation(self, population):
         self.generation_number += 1
