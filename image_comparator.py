@@ -11,8 +11,8 @@ import utils
 
 # Default settings
 config_strictness = 4 # 1-5
+config_preprocess_mode = "gray" # "binary" or "gray" or "color"
 config_threshold = 230 # 0-255 higher value includes lighter grayscale values
-config_preprocess_mode = "binary"
 config_erode_binary = False
 
 
@@ -32,7 +32,7 @@ def load_samples(sketch):
     for filepath in utils.listfiles(samplespath, fullpath=True):
         img = sketch.loadImage(filepath)
         if img is not None:
-            img, pixels = img_preprocess(sketch, img, False)
+            img, pixels = img_preprocess(sketch, img)
             sample_images.append(img)
             samples.append(pixels)
     if not sample_images:
@@ -54,7 +54,7 @@ def draw_preview(sketch):
     sketch.noTint()
     
     
-def img_preprocess(sketch, pImg, erode_binary):
+def img_preprocess(sketch, pImg):
     sizes = [5, 9, 15, 25, 50]
     i = utils.constrain(int(round(config_strictness)), 1, len(sizes)) - 1
     img = pImg.copy()
@@ -62,12 +62,19 @@ def img_preprocess(sketch, pImg, erode_binary):
         img.resize(sizes[i], 0)
     else:
         img.resize(0, sizes[i])        
-    if "config_preprocess_mode" in globals() and config_preprocess_mode == "binary":
-        if erode_binary:
+    if config_preprocess_mode == "color":
+        pixels = [sketch.hue(p) for p in img.pixels]
+    elif config_preprocess_mode == "gray":
+        img.filter(sketch.GRAY)
+        pixels = [sketch.brightness(p) for p in img.pixels]
+    elif config_preprocess_mode == "binary":
+        if config_erode_binary:
             img.filter(sketch.ERODE)
         img.filter(sketch.GRAY)
         img.filter(sketch.THRESHOLD, config_threshold/255.0)
-    pixels = [sketch.brightness(p) for p in img.pixels]
+        pixels = [sketch.brightness(p) for p in img.pixels]
+    else:
+        raise ValueError("Illegal value for config_preprocess_mode <{}>".format(config_preprocess_mode))
     return img, pixels
 
 
@@ -80,7 +87,7 @@ def compare(sketch, pImg):
     if not samples:
         load_samples(sketch)
     global last_image # Remember it so we can draw a preview if desired
-    last_image, imgpixels = img_preprocess(sketch, pImg, config_erode_binary)
+    last_image, imgpixels = img_preprocess(sketch, pImg)
     overall_score = 0.0
     num_pixels = len(imgpixels)
     for samplepixels in samples:
@@ -91,4 +98,14 @@ def compare(sketch, pImg):
         overall_score += score
     overall_score /= len(samples) # Mean error for all sample comparisons
     return overall_score
+
+
+def pixel_score(px1, px2):
+    score = 0
+    for i in range(len(px1)):
+        score += 1.0 - (abs(px1[i] - px2[i]) / 255.0)
+    return score / float(len(px1))
     
+    
+def to_rgb(sketch, px):
+    return [px >> 16 & 0xFF, px >> 8 & 0xFF, px & 0xFF, sketch.alpha(px)]

@@ -10,32 +10,65 @@ import utils
 
 # Settings
 
-#config_layout = "build_shapes_point"
-config_layout = "build_shapes_grid"
-config_genes_per_shape = 2
-config_number_of_shapes = 25
+config_layout = "GridLayout" # "GridLayout" # or "PointLayout"
+config_number_of_shapes = 9 # 9, 16, 25, 36, 49
 
 # Scaling and rotation
-config_shape_uniform_scale = 0.65
-config_shape_min_scale = 0.8
-config_shape_max_scale = 1.2
-config_canvas_scale = 0.85 # Scale down drawing to create blank margins
-config_snap_angles = [] # If left empty, angles will be selected from 0-359. 
+config_shape_uniform_scale = 2.0
+config_canvas_scale = 0.90 # Scale down drawing to create margins
+config_snap_angles = [0, 90, 180, 270] #[0, 45, 90, 135, 180, 225, 270, 315] # If left empty, angles will be selected from 0-359. 
 config_rotation_jitter = 10.0 # Degrees
 
+# Rendering
 hi_res_width = 1200
 
 
 
-def render(sketch, chromosome, canvas=None):
-    '''Draw a set of shapes to a given graphics canvas.
-    This is the main rendering function. It uses the 
-    function specified in the config_layout attribute
-    for building the actual shapes from a given chromosome.
+class PointLayout(object):
+    '''Create shapes using a specified point on the canvas.
+    '''
+    params_per_shape = 4
+        
+    def shapes(self, catalog, params, canvas):
+        shapes = []
+        for p in utils.partition_list(params, self.params_per_shape):
+            image = catalog.pick(p[0])
+            x = p[1] * canvas.width
+            y = p[2] * canvas.height
+            rotation = get_angle(p[3])
+            scale = get_uniform_scale_factor(canvas)
+            s = Shape(image, x, y, rotation, scale)
+            shapes.append(s)
+        return shapes
+
+
+class GridLayout(object):
+    '''Create shapes using center points of grid cells.
+    Assumes that the number of cells equals the number of shapes.
+    '''
+    params_per_shape = 2
+    
+    def shapes(self, catalog, params, canvas):
+        shapes = []
+        for p in utils.partition_list(params, self.params_per_shape):
+            image = catalog.pick(p[0])
+            rotation = get_angle(p[1])
+            scale = get_uniform_scale_factor(canvas)
+            s = Shape(image, 0, 0, rotation, scale)
+            shapes.append(s)
+        rows = cols = int(round(sqrt(len(shapes))))
+        grid = utils.Grid(canvas.width, canvas.height, cols, rows)
+        for i in range(min(len(shapes), len(grid.cells))):
+            shapes[i].move_to(grid.cells[i].center)
+        return shapes
+
+
+def render(sketch, params, canvas=None):
+    '''Create the drawing, using shapes provided
+    by the specified layout object. 
     '''
     if canvas is None: 
         canvas = sketch # If no canvas was provided then use the sketch
-    shapes = build_shapes(sketch, chromosome, canvas)
     canvas.background(255)
     noFill()
     canvas.pushMatrix()
@@ -43,7 +76,8 @@ def render(sketch, chromosome, canvas=None):
     marginx = canvas.width * (1.0-config_canvas_scale) / 2.0
     marginy = canvas.height * (1.0-config_canvas_scale) / 2.0
     canvas.translate(marginx, marginy)
-    for s in shapes:
+    catalog = PartsCatalog(sketch)
+    for s in layout.shapes(catalog, params, canvas):
         canvas.pushMatrix()
         canvas.translate(s.center.x, s.center.y)
         canvas.rotate(radians(s.rotation))
@@ -51,52 +85,9 @@ def render(sketch, chromosome, canvas=None):
         canvas.image(s.image, s.left, s.top, s.width, s.height)
         canvas.popMatrix()
     canvas.popMatrix()
-        
-        
-def build_shapes_point(sketch, chromosome, canvas):
-    '''Create shapes using a specified point on the canvas.
-    gene[0] is image part number
-    gene[1],gene[2] are x,y position
-    gene[3] is rotation
-    gene[4] is scale (optional)
-    '''
-    catalog = PartsCatalog(sketch)
-    shapes_genes = utils.partition_list(chromosome, config_genes_per_shape)
-    shapes = []
-    for genes in shapes_genes:
-        image = catalog.pick(genes[0])
-        x = genes[1] * canvas.width
-        y = genes[2] * canvas.height
-        rotation = get_angle(genes[3])
-        scale = get_uniform_scale_factor(canvas)
-        if len(genes) > 4:
-            scale *= genes[4] * (config_shape_max_scale - config_shape_min_scale) + config_shape_min_scale
-        s = Shape(image, x, y, rotation, scale)
-        shapes.append(s)
-    return shapes
 
 
-def build_shapes_grid(sketch, chromosome, canvas):
-    '''Create shapes using center points of grid cells.
-    Assumes that the number of cells equals the number of shapes.
-    gene[0] is image part number
-    gene[1] is rotation
-    '''
-    catalog = PartsCatalog(sketch)
-    shapes_genes = utils.partition_list(chromosome, config_genes_per_shape)
-    shapes = []
-    for genes in shapes_genes:
-        image = catalog.pick(genes[0])
-        rotation = get_angle(genes[1])
-        scale = get_uniform_scale_factor(canvas)
-        s = Shape(image, 0, 0, rotation, scale)
-        shapes.append(s)
-    rows = cols = int(round(sqrt(len(shapes))))
-    grid = utils.Grid(canvas.width, canvas.height, cols, rows)
-    for i in range(min(len(shapes), len(grid.cells))):
-        shapes[i].move_to(grid.cells[i].center)
-    return shapes
-
+layout = globals()[config_layout]()
 
 
 
@@ -104,6 +95,9 @@ def build_shapes_grid(sketch, chromosome, canvas):
 # Everything below this point is utility
 # code for helping build the drawing
 ###################################################################
+
+def num_params():
+    return layout.params_per_shape * config_number_of_shapes
 
 def get_angle(i_normalized):
     angles = config_snap_angles if config_snap_angles else range(359)
@@ -117,9 +111,11 @@ def get_uniform_scale_factor(canvas):
     scale = canvas.width / float(hi_res_width) # Assume that images are scaled to hi-res version
     scale *= config_shape_uniform_scale
     return scale
-        
+
+def remap_normalized(val, minval, maxval):
+    return val * (maxval - minval) + minval
     
-def build_shapes(sketch, chromosome, canvas):
+def build_shapes_OBS(sketch, chromosome, canvas):
     '''Helper function to retrieve the layout function by name
     and invoke the function to obtain a list of shapes.'''
     layout_func = globals()[config_layout]

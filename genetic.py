@@ -15,7 +15,6 @@ max_stagnant_generations = 1000
 update_interval = 10
 verbose = False
 
-
 # Callback functions
 phenotype_function = None
 fitness_function = None
@@ -92,6 +91,7 @@ class EvolverState(object):
     def __init__(self):
         self.reset()
         self.max_gens = 0
+        self.fitness_changed = False
     
     def reset(self):
         self.generation_number = 0
@@ -135,7 +135,7 @@ state = EvolverState()
 def initialize(genome_size):
     ''' Initialize the population and evolver state.'''
     if population.initialized: return
-    popsize = int(round(genome_size * 1.75))
+    popsize = int(round(genome_size * 1.5)) # Or 1.75 is better in general
     utils.validate_set("phenotype_function", phenotype_function)
     utils.validate_set("fitness_function", fitness_function)
     firstgen = [Individual().randomize(genome_size) for i in range(popsize)]
@@ -184,6 +184,9 @@ def fittest():
 
 def fittest_phenotype():
     return fittest().phenotype
+    
+def random_phenotype():
+    return random.choice(population.individuals).phenotype
 
 def high_score():
     return population.fittest.fitness

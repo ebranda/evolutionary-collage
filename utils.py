@@ -8,40 +8,40 @@ import os
 import math
 import time
 import random
-
-
-
-#####################################################################
-# Application-specific helper functions
-#####################################################################
-
-
-def print_startup_messages(sketch):
-    runs = RunManager(sketch)
-    print("Starting run {}".format(runs.run_number))
-    print("Click anywhere in the canvas window to save a high resolution image at any time.")
-    print("Press spacebar to toggle preview of processed images.")
-
-
-def print_shutdown_messages(sketch):
-    runs = RunManager(sketch)
-    outputpath = os.path.sep.join(runs.run_dir_path.split(os.path.sep)[-3:])
-    print("All output was saved to your sketchbook folder in <{}>.".format(outputpath))
-    print("Exit.")
-
-
-def configure(obj, config):
-    for attr in dir(config):
-        if attr.startswith("__"): continue
-        if hasattr(obj, attr):
-            setattr(obj, attr, getattr(config, attr))
-
     
+    
+def save_low_res(sketch, ga):
+    '''Save a snapshot of the current canvas.'''
+    runs = RunManager(sketch)
+    create_folder(runs.run_dir_path)
+    filename = "generation-{0:04d}.png".format(ga.generation_number())
+    filepath = os.path.join(runs.run_dir_path, filename)
+    image = sketch.get()
+    image.save(filepath)
+
+
+def save_hi_res(sketch, ga, drawing, createGraphics):
+    '''Render and save a hi-res version of the fittest solution.'''
+    runs = RunManager(sketch)
+    create_folder(runs.run_dir_path)
+    w = drawing.hi_res_width
+    h = sketch.height * drawing.hi_res_width / sketch.width
+    canvas = GraphicsBuffer(createGraphics, w, h)
+    canvas.beginDraw()
+    drawing.render(sketch, ga.fittest().genes, canvas)
+    canvas.endDraw()
+    filename = "generation-{0:04d}-hi-res.png".format(ga.generation_number())
+    filepath = os.path.join(runs.run_dir_path, filename)
+    canvas.save(filepath)
+    print("Saved hi-res image of fittest in generation {}".format(ga.generation_number()))
+    
+
 def create_report(sketch, drawing, ga, ic):
     def underline(lines):
         #lines.append("".join(["-"] * len(lines[-1]) * 2))
         lines.append("".join(["-"] * 45))
     runs = RunManager(sketch)
+    create_folder(runs.run_dir_path)
     lines = []
     def add_config(obj, lines):
         for attr in dir(obj):
@@ -63,44 +63,15 @@ def create_report(sketch, drawing, ga, ic):
     filepath = os.path.join(runs.run_dir_path, "report.txt")
     write_strings_to_file(filepath, lines)
     
-    
-def save_low_res(sketch, ga):
-    '''Save a snapshot of the current canvas.'''
-    runs = RunManager(sketch)
-    filename = "generation-{0:04d}.png".format(ga.generation_number())
-    filepath = os.path.join(runs.run_dir_path, filename)
-    image = sketch.get()
-    image.save(filepath)
+
+def run_dir_path(sketch):
+    return RunManager(sketch).run_dir_path
 
 
-def save_hi_res(sketch, ga, drawing, createGraphics):
-    '''Render and save a hi-res version of the fittest solution.'''
-    runs = RunManager(sketch)
-    w = drawing.hi_res_width
-    h = sketch.height * drawing.hi_res_width / sketch.width
-    canvas = GraphicsBuffer(createGraphics, w, h)
-    canvas.beginDraw()
-    drawing.render(sketch, ga.fittest().genes, canvas)
-    canvas.endDraw()
-    filename = "generation-{0:04d}-hi-res.png".format(ga.generation_number())
-    filepath = os.path.join(runs.run_dir_path, filename)
-    canvas.save(filepath)
-    print("Saved hi-res image of fittest in generation {}".format(ga.generation_number()))
+def run_number(sketch):
+    return RunManager(sketch).run_number
     
-        
-class GraphicsBuffer(object):
-    # Enforce a singleton pattern that allows only one instance
-    # per width+height pair to be created.
-    _instances = {}
-    def __new__(cls, createGraphics, canvas_width, canvas_height):
-        key = "{}_{}".format(canvas_width, canvas_height)
-        if key not in cls._instances:
-            w = int(round(canvas_width))
-            h = int(round(canvas_height))
-            cls._instances[key] = createGraphics(w, h)
-        return cls._instances[key]
-        
-        
+    
 class RunManager(object):
     # Enforce a singleton pattern
     _instance = None
@@ -113,28 +84,45 @@ class RunManager(object):
             inst.run_number = prevrun + 1
             folder_name = "run-{0:04d}".format(inst.run_number)
             inst.run_dir_path = os.path.join(inst.runs_base_path, folder_name)
-            create_folder(inst.run_dir_path)
             cls._instance = inst
         return cls._instance
 
+        
+
+#####################################################################
+# Processing-specific helpers
+#####################################################################
 
 
-"""
-Automatically adjust the frame rate of a Processing sketch
-to minimize CPU hogging. The call to end_draw() will check
-the current sketch frameRate and adjust accordingly so that
-there is some CPU headroom.
+class GraphicsBuffer(object):
+    # Enforce a singleton pattern that allows only one instance
+    # per width+height pair to be created.
+    _instances = {}
+    def __new__(cls, createGraphics, canvas_width, canvas_height):
+        key = "{}_{}".format(canvas_width, canvas_height)
+        if key not in cls._instances:
+            w = int(round(canvas_width))
+            h = int(round(canvas_height))
+            cls._instances[key] = createGraphics(w, h)
+        return cls._instances[key]
 
-Usage:
 
-fr = utils.FrameRateRegulator(this)
-
-def draw():
-    fr.start_draw()
-    # Do your drawing here
-    fr.end_draw(frameRate)
-"""
 class FrameRateRegulator(object):
+    """
+    Automatically adjust the frame rate of a Processing sketch
+    to minimize CPU hogging. The call to end_draw() will check
+    the current sketch frameRate and adjust accordingly so that
+    there is some CPU headroom.
+
+    Usage:
+
+    fr = utils.FrameRateRegulator(this)
+
+    def draw():
+        fr.start_draw()
+        # Do your drawing here
+        fr.end_draw(frameRate)
+    """
     
     # Enforce a singleton pattern
     _instance = None
@@ -172,7 +160,7 @@ class FrameRateRegulator(object):
                 
                 
 #####################################################################
-# Genetic Python utility functions
+# Generic Python helpers
 #####################################################################
 
 
