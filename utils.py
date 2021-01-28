@@ -10,6 +10,10 @@ import time
 import random
 from distutils.dir_util import copy_tree
     
+
+def filepath(*args):
+    return os.path.sep.join(args)
+    
     
 def save_low_res(sketch, ga):
     '''Save a snapshot of the current canvas.'''
