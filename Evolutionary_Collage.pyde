@@ -8,9 +8,7 @@ testmode = False # Set this to True to explore the solution space or False to ru
 
 def setup():
     size(400, 400)
-    ga.phenotype_function = create_phenotype
-    ga.fitness_function = compute_fitness
-    ga.initialize(drawing.num_params())
+    ga.initialize(drawing.num_params(), create_phenotype, compute_fitness)
     if testmode:
         print("Exploring the space of random solutions...")
     else:

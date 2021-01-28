@@ -10,50 +10,14 @@ import utils
 
 # Settings
 config_mutation_rate = 0.08
-config_fitness_decimal_places = 4
-max_stagnant_generations = 1000
+config_fitness_decimal_places = 2
+max_stagnant_generations = 50
 update_interval = 10
 verbose = False
 
 # Callback functions
 phenotype_function = None
 fitness_function = None
-fitness_changed_callback = None
-
-
-class Population(object):
-    
-    def __init__(self):
-        self.individuals = []
-        self.matingpool = []
-        self.fittest = None
-        
-    def update(self, individuals, phenotype_function, fitness_function):
-        self.individuals = []
-        for i, ind in enumerate(individuals):
-            ind.update(phenotype_function, fitness_function)
-            self.individuals.append(ind)
-        # Cache the fittest individual
-        for ind in self.individuals:
-            if self.fittest is None or ind.fitter_than(self.fittest):
-                self.fittest = ind
-        # Build the mating pool of fittest individuals for the next generation
-        ranked = sorted(self.individuals, key=lambda ind: ind.fitness)
-        # Use the rank position squared as the mating probability
-        # Divide by the population size to more reasonable value.
-        probabilities = [int(round(((r + 1) ** 2) / float(len(self.individuals)))) for r in range(len(ranked))]
-        self.matingpool = []
-        for ind, prob in zip(ranked, probabilities):
-            self.matingpool.extend([ind] * prob)
-    
-    def random_parents(self):
-        parent1 = random.choice(self.matingpool)
-        parent2 = random.choice(self.matingpool)
-        return parent1, parent2
-        
-    @property
-    def initialized(self):
-        return len(self.individuals) > 0
 
 
 class Individual:
@@ -89,24 +53,23 @@ class Individual:
 class EvolverState(object):
     
     def __init__(self):
-        self.reset()
-        self.max_gens = 0
-    
-    def reset(self):
         self.generation_number = 0
         self.stagnant_count = 0
         self.high_score = None
         self.start_time = time.time()
         self.end_time = None
         self.fitness_changed = True
-    
-    def new_generation(self, population):
+        self.fittest = None
+        self.max_gens = max_stagnant_generations
+        
+    def update(self, population):
         self.generation_number += 1
         self.fitness_changed = False
-        newfittest = population.fittest
-        if newfittest.fitness > self.high_score:
-            self.high_score = newfittest.fitness
+        fittest = max(population, key=lambda ind: ind.fitness)
+        if fittest.fitness > self.high_score:
+            self.high_score = fittest.fitness
             self.fitness_changed = True
+            self.fittest = fittest
             self.stagnant_count = 0
         else:
             self.stagnant_count += 1
@@ -129,71 +92,101 @@ class EvolverState(object):
         return self.end_time - self.start_time
 
 
-population = Population()
-state = EvolverState()
-
-def initialize(genome_size):
-    ''' Initialize the population and evolver state.'''
-    if population.initialized: return
-    popsize = int(round(genome_size * 1.5)) # Or 1.75 is better in general
-    utils.validate_set("phenotype_function", phenotype_function)
-    utils.validate_set("fitness_function", fitness_function)
-    firstgen = [Individual().randomize(genome_size) for i in range(popsize)]
-    population.update(firstgen, phenotype_function, fitness_function)
-    state.max_gens = max_stagnant_generations
-
-def evolve():
-    ''' Evolve a generation.
+class Evolver(object):
     
-    This is the main heartbeat of the evolver. Call it from a loop.
-    '''
-    # Check initialized
-    if not population.initialized:
-        raise RuntimeError("ERROR: You must call initialize() on the genetic module before calling evolve()")
+    def __init__(self):
+        self.population = []
+        self.state = EvolverState()
+    
+    def initialize(self, genomesize, phenotype_func, fitness_func, popsize=None):
+        ''' Initialize the population and evolver state.'''
+        if self.initialized: return
+        self.phenotype_function = phenotype_func
+        self.fitness_function = fitness_func
+        if popsize is None:
+            popsize = int(round(genomesize * 1.5)) # Or 1.75 is better in general
+        self.population = [Individual().randomize(genomesize) for i in range(popsize)]
+        self.matingpool = []
+        self.update_population()
         
-    # Make sure the search is not over
-    if state.finished: return
+    @property
+    def initialized(self):
+        return len(self.population) > 0
+        
+    def evolve(self):
+        ''' Evolve a generation. This is the main heartbeat 
+        of the evolver. Call it from a loop.
+        '''
+        if not self.initialized:
+            raise RuntimeError("ERROR: Evolver.evolve() called before Evolver has been initialized")
+        
+        # Make sure the search is not over
+        if self.state.finished: return
     
-    # Replace the current population with its children
-    newgen = []
-    for i in range(len(population.individuals)):
-        parent1, parent2 = population.random_parents()
-        child = parent1.breed_with(parent2, config_mutation_rate)
-        newgen.append(child)
-    population.update(newgen, phenotype_function, fitness_function)
+        # Replace the current population with its children
+        newgen = []
+        for i in range(len(self.population)):
+            parent1 = random.choice(self.matingpool)
+            parent2 = random.choice(self.matingpool)
+            child = parent1.breed_with(parent2, config_mutation_rate)
+            newgen.append(child)
+        self.population = newgen
+        self.update_population()
     
-    # Update evolver state
-    state.new_generation(population)
-    if verbose and (state.is_first_gen or state.generation_number % update_interval == 0):
-        print("Current state: {}".format(get_progress_message()))
-    if fitness_changed():
-        print("Fitter solution found [{}]...".format(get_progress_message()))
-    if state.finished: 
-        print("No fitter solution found after {} unchanged generations. Stopping search.".format(state.stagnant_count))
-        state.end()
+        # Update evolver state
+        self.state.update(self.population)
+        msg = "Generation={0:04d} Fitness={1}".format(self.state.generation_number, self.state.high_score)
+        if verbose and (self.state.is_first_gen or self.state.generation_number % update_interval == 0):
+            print("Current state: {}".format(msg))
+        if self.state.fitness_changed:
+            print("Fitter solution found [{}]...".format(msg))
+        if self.state.finished: 
+            print("No fitter solution found after {} unchanged generations. Stopping search.".format(self.state.stagnant_count))
+            self.state.end()
+            
+    def update_population(self):
+        for ind in self.population:
+            ind.update(self.phenotype_function, self.fitness_function)
+        # Cache the fittest individual
+        for ind in self.population:
+            if self.state.fittest is None or ind.fitter_than(self.state.fittest):
+                self.state.fittest = ind
+        # Build the mating pool of fittest individuals for the next generation
+        ranked = sorted(self.population, key=lambda ind: ind.fitness)
+        # Use the rank position squared as the mating probability
+        # Divide by the population size to more reasonable value.
+        probabilities = [int(round(((r + 1) ** 2) / float(len(self.population)))) for r in range(len(ranked))]
+        self.matingpool = []
+        for ind, prob in zip(ranked, probabilities):
+            self.matingpool.extend([ind] * prob)
+        
+    
+evolver = Evolver()
 
+def initialize(genome_size, phenotype_func, fitness_func):
+    evolver.initialize(genome_size, phenotype_func, fitness_func)
     
-def get_progress_message():
-    return "Generation={0:04d} Fitness={1}".format(state.generation_number, state.high_score)
+def evolve():
+    evolver.evolve()
 
 def finished():
-    return state.finished
+    return evolver.state.finished
     
 def fittest():
-    return population.fittest
+    return evolver.state.fittest
 
 def fittest_phenotype():
     return fittest().phenotype
     
 def random_phenotype():
-    return random.choice(population.individuals).phenotype
+    return random.choice(evolver.population.individuals).phenotype
 
 def high_score():
-    return population.fittest.fitness
+    return evolver.population.fittest.fitness
 
 def fitness_changed():
-    return state.fitness_changed
+    return evolver.state.fitness_changed
 
 def generation_number():
-    return state.generation_number
+    return evolver.state.generation_number
         

@@ -14,7 +14,7 @@ config_strictness = 4 # 1-5
 config_preprocess_mode = "gray" # "binary" or "gray" or "color"
 config_threshold = 230 # 0-255 higher value includes lighter grayscale values
 config_erode_binary = False
-
+preview_size = 100
 
 sample_images = []
 samples = []
@@ -41,9 +41,12 @@ def load_samples(sketch):
 
 def draw_preview(sketch):
     if not preview: return
+    sketch.fill(255, 150)
+    sketch.rect(0, 0, sketch.width, sketch.height)
+    sketch.noFill()
     margin = 10
     x, y = margin, margin
-    w, h = 50, 50
+    w = h = preview_size
     sketch.tint(210, 230, 255)
     sketch.image(last_image, x, y, w, h)
     sketch.rect(x, y, w, h)

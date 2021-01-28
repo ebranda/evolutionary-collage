@@ -11,10 +11,10 @@ import utils
 # Settings
 
 config_layout = "GridLayout" # "GridLayout" # or "PointLayout"
-config_number_of_shapes = 9 # 9, 16, 25, 36, 49
+config_number_of_shapes = 25 # 9, 16, 25, 36, 49
 
 # Scaling and rotation
-config_shape_uniform_scale = 2.0
+config_shape_uniform_scale = 1.0
 config_canvas_scale = 0.90 # Scale down drawing to create margins
 config_snap_angles = [0, 90, 180, 270] #[0, 45, 90, 135, 180, 225, 270, 315] # If left empty, angles will be selected from 0-359. 
 config_rotation_jitter = 10.0 # Degrees
@@ -99,6 +99,7 @@ layout = globals()[config_layout]()
 def num_params():
     return layout.params_per_shape * config_number_of_shapes
 
+
 def get_angle(i_normalized):
     angles = config_snap_angles if config_snap_angles else range(359)
     i = utils.normalized_value_to_index(i_normalized, angles)
@@ -107,19 +108,15 @@ def get_angle(i_normalized):
         angle = utils.jitter(angle, config_rotation_jitter)
     return angle
 
+
 def get_uniform_scale_factor(canvas):
     scale = canvas.width / float(hi_res_width) # Assume that images are scaled to hi-res version
     scale *= config_shape_uniform_scale
     return scale
 
+
 def remap_normalized(val, minval, maxval):
     return val * (maxval - minval) + minval
-    
-def build_shapes_OBS(sketch, chromosome, canvas):
-    '''Helper function to retrieve the layout function by name
-    and invoke the function to obtain a list of shapes.'''
-    layout_func = globals()[config_layout]
-    return layout_func(sketch, chromosome, canvas)
 
  
 class PartsCatalog(object):
