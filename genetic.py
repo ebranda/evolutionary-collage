@@ -179,7 +179,7 @@ def fittest_phenotype():
     return fittest().phenotype
     
 def random_phenotype():
-    return random.choice(evolver.population.individuals).phenotype
+    return random.choice(evolver.population).phenotype
 
 def high_score():
     return evolver.population.fittest.fitness
