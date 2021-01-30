@@ -121,10 +121,10 @@ class GraphicsBuffer(object):
     # per width+height pair to be created.
     _instances = {}
     def __new__(cls, createGraphics, canvas_width, canvas_height):
-        key = "{}_{}".format(canvas_width, canvas_height)
+        w = int(round(canvas_width))
+        h = int(round(canvas_height))
+        key = "{}_{}".format(w, h)
         if key not in cls._instances:
-            w = int(round(canvas_width))
-            h = int(round(canvas_height))
             cls._instances[key] = createGraphics(w, h)
         return cls._instances[key]
 
@@ -199,13 +199,13 @@ class Grid(object):
         self.cells = []
         self.width = width
         self.height = height
-        cell_width = float(width) / cols
-        cell_height = float(height) / rows
+        self.cell_dim_x = float(width) / cols
+        self.cell_dim_y = float(height) / rows
         for r in range(rows):
             top = height * float(r) / rows
             for c in range(cols):
                 left = width * float(c) / cols
-                self.cells.append(GridCell(left, top, cell_width, cell_height))
+                self.cells.append(GridCell(left, top, self.cell_dim_x, self.cell_dim_y))
                 
 class GridCell(object):
     def __init__(self, left, top, width, height):
@@ -214,6 +214,8 @@ class GridCell(object):
         self.width = width
         self.height = height
         self.center = Point(self.left + self.width / 2.0, self.top + self.height / 2.0)
+        self.top_left = Point(self.left, self.top)
+        self.bottom_right = Point(self.left + self.width, self.top + self.height)
     
     @property
     def cx(self):
@@ -232,9 +234,9 @@ class Point(object):
     def distance_to(self, other):
         return math.sqrt((self.x-other.x)**2 + (self.y-other.y)**2)
         
-    def move_to(self, target):
-        self.x = target.x
-        self.y = target.y
+    def move(self, tx, ty):
+        self.x += tx
+        self.y += ty
     
     def __repr__(self):
         return "<Point>[{},{}]".format(self.x, self.y)

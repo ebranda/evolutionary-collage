@@ -11,7 +11,7 @@ import utils
 
 # Default settings
 config_strictness = 4 # 1-5
-config_preprocess_mode = "gray" # "binary" or "gray" or "color"
+config_preprocess_mode = "color" # "binary" or "gray" or "color"
 config_threshold = 230 # 0-255 higher value includes lighter grayscale values
 config_erode_binary = False
 preview_size = 100
@@ -32,7 +32,7 @@ def load_samples(sketch):
     for filepath in utils.listfiles(samplespath, fullpath=True):
         img = sketch.loadImage(filepath)
         if img is not None:
-            img, pixels = img_preprocess(sketch, img)
+            img, pixels = img_preprocess(sketch, img, True)
             sample_images.append(img)
             samples.append(pixels)
     if not sample_images:
@@ -57,7 +57,7 @@ def draw_preview(sketch):
     sketch.noTint()
     
     
-def img_preprocess(sketch, pImg):
+def img_preprocess(sketch, pImg, is_sample=False):
     sizes = [5, 9, 15, 25, 50]
     i = utils.constrain(int(round(config_strictness)), 1, len(sizes)) - 1
     img = pImg.copy()
@@ -67,6 +67,12 @@ def img_preprocess(sketch, pImg):
         img.resize(0, sizes[i])        
     if config_preprocess_mode == "color":
         pixels = [sketch.hue(p) for p in img.pixels]
+        if is_sample:
+            mean = sum(pixels) / len(pixels)
+            grayscale = sum(1 if p == mean else 0 for p in pixels)
+            if grayscale:
+                print("WARNING: config_preprocess_mode is set to color but your comparator image appears to be grayscale.")
+                print("   You should change that setting to 'gray' or you will get unpredictable fitness results.") 
     elif config_preprocess_mode == "gray":
         img.filter(sketch.GRAY)
         pixels = [sketch.brightness(p) for p in img.pixels]

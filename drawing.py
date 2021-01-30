@@ -8,38 +8,54 @@ import math
 import utils
 
 
-# Settings
+### Settings ###
 
-config_layout = "GridLayout" # "GridLayout" # or "PointLayout"
+# Layout
+config_layout = "GridLayout" # "GridLayout" # or "PointLayout" # TODO test PointLayout
 config_number_of_shapes = 25 # 9, 16, 25, 36, 49
 
-# Scaling and rotation
-config_shape_uniform_scale = 1.0
+# Scaling
+config_shape_uniform_scale = 0.605 - 0.2
 config_canvas_scale = 0.90 # Scale down drawing to create margins
+
+# Rotation
+config_disable_rotation = False
 config_snap_angles = [0, 90, 180, 270] #[0, 45, 90, 135, 180, 225, 270, 315] # If left empty, angles will be selected from 0-359. 
-config_rotation_jitter = 10.0 # Degrees
+config_rotation_jitter = 10.0 # Degrees - set to 0 to disable
+
+# Grid layout
+config_crop_to_cell = True
+config_nudge_max_factor = 0.3 # A multiple of the grid cell dimension. Set to 0 to disable nudge and keep parts in center of cells.
+render_grid = False
 
 # Rendering
 hi_res_width = 1200
-
 
 
 class PointLayout(object):
     '''Create shapes using a specified point on the canvas.
     '''
     params_per_shape = 4
+    if config_disable_rotation:
+        params_per_shape -= 1
         
-    def shapes(self, catalog, params, canvas):
-        shapes = []
-        for p in utils.partition_list(params, self.params_per_shape):
-            image = catalog.pick(p[0])
-            x = p[1] * canvas.width
-            y = p[2] * canvas.height
-            rotation = get_angle(p[3])
-            scale = get_uniform_scale_factor(canvas)
-            s = Shape(image, x, y, rotation, scale)
-            shapes.append(s)
-        return shapes
+    def render(self, sketch, params, canvas):
+        shapesparams = utils.partition_list(params, self.params_per_shape)
+        for params in shapesparams:
+            params = list(params) # Make a copy so we can remove items from front of list until empty
+            image = PartsCatalog(sketch).pick(params.pop(0))
+            cx = params.pop(0) * canvas.width
+            cy = params.pop(0) * canvas.height
+            rotation = 0 if config_disable_rotation else get_angle(params.pop(0))
+            shape_w, shape_h = get_shape_size(image, canvas)
+            canvas.pushMatrix()
+            canvas.translate(cx, cy)
+            canvas.rotate(radians(rotation))
+            canvas.translate(-cx, -cy)
+            x = cx - shape_w / 2.0
+            y = cy - shape_h / 2.0
+            canvas.image(image, x, y, shape_w, shape_h)
+            canvas.popMatrix()
 
 
 class GridLayout(object):
@@ -47,22 +63,64 @@ class GridLayout(object):
     Assumes that the number of cells equals the number of shapes.
     '''
     params_per_shape = 2
+    if config_disable_rotation:
+        params_per_shape -= 1
+    if config_nudge_max_factor > 0:
+        params_per_shape += 2
     
-    def shapes(self, catalog, params, canvas):
-        shapes = []
-        for p in utils.partition_list(params, self.params_per_shape):
-            image = catalog.pick(p[0])
-            rotation = get_angle(p[1])
-            scale = get_uniform_scale_factor(canvas)
-            s = Shape(image, 0, 0, rotation, scale)
-            shapes.append(s)
-        rows = cols = int(round(sqrt(len(shapes))))
+    def render(self, sketch, params, canvas):
+        shapesparams = utils.partition_list(params, self.params_per_shape)
+        rows = cols = int(round(sqrt(len(shapesparams))))
         grid = utils.Grid(canvas.width, canvas.height, cols, rows)
-        for i in range(min(len(shapes), len(grid.cells))):
-            shapes[i].move_to(grid.cells[i].center)
-        return shapes
-
-
+        if render_grid:
+            self._render_grid(sketch, grid)
+        for i in range(min(len(shapesparams), len(grid.cells))):
+            params = list(shapesparams[i]) # Make a copy so we can remove items from front of list until empty
+            cell = grid.cells[i]
+            image = PartsCatalog(sketch).pick(params.pop(0))
+            rotation = 0 if config_disable_rotation else get_angle(params.pop(0))
+            nudge_x, nudge_y = self._get_nudge(cell, params)
+            shape_w, shape_h = get_shape_size(image, canvas)
+            if config_crop_to_cell:
+                graphics = utils.GraphicsBuffer(sketch.createGraphics, cell.width, cell.height)
+                graphics.beginDraw()
+                graphics.clear()
+                target = graphics
+                cx = cell.width / 2.0
+                cy = cell.height / 2.0
+            else:
+                target = canvas
+                cx = cell.cx
+                cy = cell.cy
+            target.pushMatrix()
+            target.translate(cx, cy)
+            target.rotate(radians(rotation))
+            target.translate(-cx, -cy)
+            x = cx - shape_w / 2.0 + nudge_x
+            y = cy - shape_h / 2.0 + nudge_y
+            target.image(image, x, y, shape_w, shape_h)
+            target.popMatrix()
+            if config_crop_to_cell:
+                graphics.endDraw()
+                canvas.image(graphics, cell.left, cell.top)
+        
+    def _get_nudge(self, cell, params):
+        if not params:
+            return 0, 0
+        nudge_max_x = cell.width * config_nudge_max_factor
+        nudge_max_y = cell.height * config_nudge_max_factor
+        nudge_x = params.pop(0) * nudge_max_x * 2 - nudge_max_x
+        nudge_y = params.pop(0) * nudge_max_y * 2 - nudge_max_y
+        return nudge_x, nudge_y
+        
+    def _render_grid(self, sketch, grid):
+        for i in range(len(grid.cells)):
+            cell = grid.cells[i]
+            sketch.fill(color(255,0,0,100) if i % 2 else color(0,0,255,100))
+            sketch.rect(cell.left, cell.top, cell.width, cell.height)
+            sketch.noFill()
+    
+    
 def render(sketch, params, canvas=None):
     '''Create the drawing, using shapes provided
     by the specified layout object. 
@@ -76,18 +134,12 @@ def render(sketch, params, canvas=None):
     marginx = canvas.width * (1.0-config_canvas_scale) / 2.0
     marginy = canvas.height * (1.0-config_canvas_scale) / 2.0
     canvas.translate(marginx, marginy)
-    catalog = PartsCatalog(sketch)
-    for s in layout.shapes(catalog, params, canvas):
-        canvas.pushMatrix()
-        canvas.translate(s.center.x, s.center.y)
-        canvas.rotate(radians(s.rotation))
-        canvas.translate(-s.center.x, -s.center.y)
-        canvas.image(s.image, s.left, s.top, s.width, s.height)
-        canvas.popMatrix()
+    layout.render(sketch, params, canvas)
     canvas.popMatrix()
 
 
 layout = globals()[config_layout]()
+
 
 
 
@@ -99,7 +151,6 @@ layout = globals()[config_layout]()
 def num_params():
     return layout.params_per_shape * config_number_of_shapes
 
-
 def get_angle(i_normalized):
     angles = config_snap_angles if config_snap_angles else range(359)
     i = utils.normalized_value_to_index(i_normalized, angles)
@@ -108,12 +159,12 @@ def get_angle(i_normalized):
         angle = utils.jitter(angle, config_rotation_jitter)
     return angle
 
-
-def get_uniform_scale_factor(canvas):
-    scale = canvas.width / float(hi_res_width) # Assume that images are scaled to hi-res version
-    scale *= config_shape_uniform_scale
-    return scale
-
+def get_shape_size(image, canvas):
+    imgscale = canvas.width / float(hi_res_width) # Assume that images are scaled to hi-res version
+    imgscale *= config_shape_uniform_scale
+    shape_w = image.width * imgscale 
+    shape_h = image.height * imgscale
+    return shape_w, shape_h
 
 def remap_normalized(val, minval, maxval):
     return val * (maxval - minval) + minval
@@ -145,35 +196,7 @@ class PartsCatalog(object):
         return self.parts[i]
     
     
-class Shape(object):
-    '''Encapsulate the functionality for one of the shapes
-    that make up the drawing.
-    '''
-    def __init__(self, image, cx, cy, rotation=0.0, scale=1.0):
-        self.image = image
-        self.width = image.width * scale
-        self.height = image.height * scale
-        self.rotation = rotation
-        self.center = utils.Point(cx, cy)
-        
-    def move_to(self, targetpt):
-        self.center.move_to(targetpt)
-        
-    def scale_to(self, sketch, canvas):
-        factor = canvas.width / float(sketch.width)
-        self.scale(factor)
-        
-    def scale(self, factor):
-        self.width *= factor
-        self.height *= factor
-    
-    @property
-    def left(self):
-        return self.center.x - self.width/2
-    
-    @property 
-    def top(self):
-        return self.center.y - self.height/2
+
 
 
     
