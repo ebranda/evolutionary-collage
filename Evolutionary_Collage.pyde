@@ -3,13 +3,12 @@ import drawing
 import utils
 import image_comparator as ic
 
-testmode = True # Set this to True to explore the solution space or False to run the solver.
-
-# TODO: ignore video: some settings cannot be set from here
+testmode = False # Set this to True to explore the solution space or False to run the solver.
 
 
 def setup():
     size(400, 400)
+    drawing.initialize()
     ga.initialize(drawing.num_params(), create_phenotype, compute_fitness)
     if testmode:
         print("Exploring the space of random solutions...")
@@ -35,7 +34,6 @@ def draw():
 
 
 # Convert a list of numbers (genes) to a drawing image.
-
 def create_phenotype(chromosome):
     drawing.render(this, chromosome)
     image = this.get() # Grab the current canvas as an image

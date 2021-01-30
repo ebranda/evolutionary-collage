@@ -101,6 +101,7 @@ class Evolver(object):
     def initialize(self, genomesize, phenotype_func, fitness_func, popsize=None):
         ''' Initialize the population and evolver state.'''
         if self.initialized: return
+        print("Initializing the solver...")
         self.phenotype_function = phenotype_func
         self.fitness_function = fitness_func
         if popsize is None:
@@ -108,6 +109,7 @@ class Evolver(object):
         self.population = [Individual().randomize(genomesize) for i in range(popsize)]
         self.matingpool = []
         self.update_population()
+        print("Solver initialized.")
         
     @property
     def initialized(self):

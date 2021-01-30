@@ -10,8 +10,8 @@ import utils
 
 
 # Default settings
-config_strictness = 4 # 1-5
-config_preprocess_mode = "color" # "binary" or "gray" or "color"
+config_strictness = 3 # 1-5
+config_preprocess_mode = "gray" # "binary" or "gray" or "color"
 config_threshold = 230 # 0-255 higher value includes lighter grayscale values
 config_erode_binary = False
 preview_size = 100
