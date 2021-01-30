@@ -8,6 +8,7 @@ testmode = False # Set this to True to explore the solution space or False to ru
 
 def setup():
     size(400, 400)
+    drawing.initialize()
     ga.initialize(drawing.num_params(), create_phenotype, compute_fitness)
     if testmode:
         print("Exploring the space of random solutions...")
@@ -16,7 +17,7 @@ def setup():
         print("Press spacebar to toggle preview of processed images.")
         utils.create_report(this, drawing, ga, ic)
         utils.copy_input_images(this)
-    
+
 
 def draw():
     if utils.is_paused(): return
