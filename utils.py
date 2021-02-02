@@ -11,8 +11,9 @@ import random
 from distutils.dir_util import copy_tree
     
 
-def filepath(*args):
-    return os.path.sep.join(args)
+def autosave(sketch, ga, drawing, fittestonly):
+    if not ga.fitness_changed(): return
+    save_hi_res(sketch, ga, drawing, fittestonly)
     
     
 def save_low_res(sketch, ga):
@@ -25,18 +26,21 @@ def save_low_res(sketch, ga):
     image.save(filepath)
 
 
-def save_hi_res(sketch, ga, drawing, createGraphics):
+def save_hi_res(sketch, ga, drawing, replace=False):
     '''Render and save a hi-res version of the fittest solution.'''
     runs = RunManager(sketch)
     create_folder(runs.run_dir_path)
     w = drawing.hi_res_width
     h = sketch.height * drawing.hi_res_width / sketch.width
-    canvas = GraphicsBuffer(createGraphics, w, h)
+    canvas = GraphicsBuffer(sketch.createGraphics, w, h)
     canvas.beginDraw()
     drawing.render(sketch, ga.fittest().genes, canvas)
     canvas.endDraw()
     filename = "generation-{0:04d}-hi-res.png".format(ga.generation_number())
-    filepath = os.path.join(runs.run_dir_path, "output", filename)
+    outputdir = os.path.join(runs.run_dir_path, "output")
+    if replace and os.path.isdir(outputdir):
+        delete_contents(outputdir)
+    filepath = os.path.join(outputdir, filename)
     canvas.save(filepath)
     #print("Saved hi-res image of fittest in generation {}".format(ga.generation_number()))
     
@@ -178,12 +182,28 @@ class FrameRateRegulator(object):
                 new_frame_rate = round(1.0 / new_frameduration, 1)
                 self.sketch.frameRate(new_frame_rate)
                 print("Automatically adjusted sketch frame rate to {} fps".format(new_frame_rate))
-                
+ 
                 
                 
 #####################################################################
 # Generic Python helpers
 #####################################################################
+
+class Settings(object):
+    def attribute_names(self):
+        return self.__dict__.keys()
+
+def configure(obj, config):
+    for attr in config.attribute_names():
+        setattr(obj, attr, getattr(config, attr))
+        
+def filepath(*args):
+    return os.path.sep.join(args)
+    
+    
+def delete_contents(directory):
+    for f in os.listdir(directory):
+        os.remove(os.path.join(directory, f))
 
 
 def copy_folder_to(folderpath, targetdir):

@@ -9,8 +9,8 @@ to a set of sample images and returing a similarity score.
 import utils
 
 
-# Default settings
-config_strictness = 3 # 1-5
+# Default settings - Don't change these here. Instead, change them in the settings.py file.
+config_strictness = 4 # 1-5
 config_preprocess_mode = "gray" # "binary" or "gray" or "color"
 config_threshold = 230 # 0-255 higher value includes lighter grayscale values
 config_erode_binary = False

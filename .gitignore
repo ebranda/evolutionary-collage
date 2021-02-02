@@ -10,4 +10,8 @@ application.macosx
 out
 *.class
 *.pyc
+sketch.properties
+backup.py
+settings.py
+fitness.py
 data

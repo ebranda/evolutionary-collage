@@ -8,7 +8,7 @@ import math
 import utils
 
 
-### Settings ###
+### Default Settings - Don't change these here. Instead, change them in the settings.py file ###
 
 # Layout
 config_layout = "GridLayout" # "GridLayout" # or "PointLayout" 
@@ -20,7 +20,7 @@ config_canvas_scale = 0.90 # Scale down drawing to create margins
 
 # Rotation
 config_disable_rotation = False
-config_snap_angles = [0, 90, 180, 270] #[0, 45, 90, 135, 180, 225, 270, 315] # If left empty, angles will be selected from 0-359. 
+config_snap_angles = [] #[0, 90, 180, 270] #[0, 45, 90, 135, 180, 225, 270, 315] # If left empty, angles will be selected from 0-359. 
 config_rotation_jitter = 10.0 # Degrees - set to 0 to disable
 
 # Settings specific to GridLayout
@@ -165,7 +165,7 @@ def render(sketch, params, canvas=None):
     if canvas is None: 
         canvas = sketch # If no canvas was provided then use the sketch
     canvas.background(255)
-    noFill()
+    canvas.noFill()
     canvas.pushMatrix()
     canvas.scale(config_canvas_scale)
     marginx = canvas.width * (1.0-config_canvas_scale) / 2.0

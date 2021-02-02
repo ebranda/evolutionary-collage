@@ -10,8 +10,8 @@ import utils
 
 # Settings
 config_mutation_rate = 0.08
-config_fitness_decimal_places = 2
-max_stagnant_generations = 50
+config_fitness_decimal_places = 3
+max_stagnant_generations = 100
 update_interval = 10
 verbose = False
 
@@ -183,6 +183,9 @@ def fittest_phenotype():
 def random_phenotype():
     return random.choice(evolver.population).phenotype
 
+def random_genome():
+    return random.choice(evolver.population).genes
+
 def high_score():
     return evolver.population.fittest.fitness
 
@@ -191,4 +194,7 @@ def fitness_changed():
 
 def generation_number():
     return evolver.state.generation_number
+
+def stagnant_count():
+    return evolver.state.stagnant_count
         
