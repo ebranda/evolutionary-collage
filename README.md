@@ -1,6 +1,6 @@
 # Evolutionary Collage
 
-##To install and run this Processing sketch
+## To install and run this Processing sketch
 
 1. Go to the [releases page](https://github.com/ebranda/evolutionary-collage/releases) and download the most recent release. Unzip the file and move the `Evolutionary Collage` folder to your Processing sketchbook (in _[home] > Documents > Processing_ by default).
 2. Navigate to the `Evolutionary Collage` folder and create the following empty folder structure:
@@ -15,7 +15,7 @@
 Note that you can add named folders inside `Evolutionary Collage/data` to better manage your projects. Simply create an empty folder (e.g. `myapp`) in `Evolutionary Collage/data` and place your `comparator_samples` and `parts` image folders inside that folder. Then edit the line at the bottom of `settings.py` so that `None` is chanaged to `"myapp"`. You can then switch between subprojects by editing `settings.py` again.
 
 
-###To install updated code
+### To install updated code
 
 This process involves installing the latest release as a new sketch in your Processing sketchbook, and then moving your existing data folder and settings file into the new sketch.
 
@@ -24,7 +24,7 @@ This process involves installing the latest release as a new sketch in your Proc
 4. Open your old sketch folder that you renamed in step 1 (`Evolutionary Collage_OLD`) and move the `data` folder and the `settings.py` file to the new sketch folder (`Evolutionary Collage`).
 
 
-###To send your Processing sketch for feedback or bug fixes
+### To send your Processing sketch for feedback or bug fixes
 
 1. Navigate to your Processing sketchbook folder (_[home] > Documents > Processing_ by default). Duplicate the `Evolutionary Collage` folder and give it a new name (e.g. `Evolutionary Collage_COPY`).
 2. Open the `data` folder inside `Evolutionary Collage_COPY`. Make sure that the images inside `comparator_samples` and `parts` are correct. Delete any additional subproject folders (see above). Delete the `runs` folder.
