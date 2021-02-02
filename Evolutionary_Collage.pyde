@@ -66,7 +66,7 @@ def stop():
     print("Exit.")
 
 
-# Try loading optional fitness.py module in case the
+# Try loading the optional fitness.py module in case the
 # project wants to define a its own fitness function.
 try: import fitness
 except: pass
