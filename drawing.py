@@ -6,23 +6,17 @@ a drawing from a genome.
 import os
 import math
 import utils
+import settings as config
 
 
 ### Default Settings - Don't change these here. Instead, change them in the settings.py file ###
-
-# Layout
 config_layout = "GridLayout" # "GridLayout" # or "PointLayout" 
-config_number_of_parts = 25 # 9, 16, 25, 36, 49, 64, 81
-
-# Scaling
+config_number_of_parts = 49 # 9, 16, 25, 36, 49, 64, 81
 config_part_uniform_scale = 1.1
 config_canvas_scale = 0.90 # Scale down drawing to create margins
-
-# Rotation
 config_disable_rotation = False
 config_snap_angles = [] #[0, 90, 180, 270] #[0, 45, 90, 135, 180, 225, 270, 315] # If left empty, angles will be selected from 0-359. 
 config_rotation_jitter = 10.0 # Degrees - set to 0 to disable
-
 # Settings specific to GridLayout
 config_crop_to_cell = True # Crops any part that overflows the grid cell dimensions
 config_nudge_factor_max = 0.0 # A multiple of the grid cell dimension. Set to 0 to disable nudge and keep parts in center of cells.
@@ -30,7 +24,6 @@ render_grid = False # Specify whether you want to preview the grid
 
 # Rendering
 hi_res_width = 1200
-
 
 
 class Part(object):
@@ -209,7 +202,7 @@ class PartsCatalog(object):
             inst = super(PartsCatalog, cls).__new__(cls)
             inst.parts = []
             inst.folder_name = "parts"
-            folderpath = sketch.dataPath(inst.folder_name)
+            folderpath = utils.app_data_path(sketch, inst.folder_name)
             for filepath in utils.listfiles(folderpath, fullpath=True):
                 img = sketch.loadImage(filepath)
                 if img is not None:

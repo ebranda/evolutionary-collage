@@ -11,8 +11,7 @@ def setup():
     utils.configure(ga, config.ga)
     utils.configure(ic, config.ic)
     drawing.initialize()
-    fitness_func = fitness.compute_fitness if "fitness" in globals() else compute_fitness
-    ga.initialize(drawing.num_params(), create_phenotype, fitness_func)
+    ga.initialize(drawing.num_params(), create_phenotype, compute_fitness)
     if config.testmode:
         print("Exploring the space of random solutions...")
     else:
@@ -68,6 +67,10 @@ def stop():
 
 # Try loading the optional fitness.py module in case the
 # project wants to define a its own fitness function.
-try: import fitness
-except: pass
+try: 
+    import fitness
+    if hasattr(fitness, "compute_fitness"):
+        compute_fitness = fitness.compute_fitness # Replace the default fitness function
+except: 
+    pass # No module or function found so just use default function in the current module
     

@@ -9,7 +9,10 @@ import math
 import time
 import random
 from distutils.dir_util import copy_tree
-    
+import shutil
+
+import settings as config
+
 
 def autosave(sketch, ga, drawing, fittestonly):
     if not ga.fitness_changed(): return
@@ -21,7 +24,7 @@ def save_low_res(sketch, ga):
     runs = RunManager(sketch)
     create_folder(runs.run_dir_path)
     filename = "generation-{0:04d}.png".format(ga.generation_number())
-    filepath = os.path.join(runs.run_dir_path, "output", filename)
+    filepath = os.path.join(run_output_path(sketch), filename)
     image = sketch.get()
     image.save(filepath)
 
@@ -37,7 +40,7 @@ def save_hi_res(sketch, ga, drawing, replace=False):
     drawing.render(sketch, ga.fittest().genes, canvas)
     canvas.endDraw()
     filename = "generation-{0:04d}-hi-res.png".format(ga.generation_number())
-    outputdir = os.path.join(runs.run_dir_path, "output")
+    outputdir = run_output_path(sketch)
     if replace and os.path.isdir(outputdir):
         delete_contents(outputdir)
     filepath = os.path.join(outputdir, filename)
@@ -46,16 +49,18 @@ def save_hi_res(sketch, ga, drawing, replace=False):
     
 
 def create_report(sketch, drawing, ga, ic):
-    def underline(lines):
-        #lines.append("".join(["-"] * len(lines[-1]) * 2))
-        lines.append("".join(["-"] * 45))
     runs = RunManager(sketch)
     create_folder(runs.run_dir_path)
+    copy_file_to(os.path.join(sketch.sketchPath(), "settings.py"), os.path.join(run_dir_path(sketch)))
+    return
     lines = []
     def add_config(obj, lines):
         for attr in dir(obj):
             if not attr.startswith("config_"): continue
             lines.append("{} = {}".format(attr, getattr(obj, attr)))
+    def underline(lines):
+        #lines.append("".join(["-"] * len(lines[-1]) * 2))
+        lines.append("".join(["-"] * 45))
     lines.append("Module settings: drawing")
     underline(lines)
     add_config(drawing, lines)
@@ -74,8 +79,19 @@ def create_report(sketch, drawing, ga, ic):
     
 
 def copy_input_images(sketch):
-    copy_folder_to(sketch.dataPath("parts"), os.path.join(run_dir_path(sketch), "data", "parts"))
-    copy_folder_to(sketch.dataPath("comparator_samples"), os.path.join(run_dir_path(sketch), "data", "comparator_samples"))
+    copy_folder_to(app_data_path(sketch, "parts"), os.path.join(run_dir_path(sketch), "inputs", "parts"))
+    copy_folder_to(app_data_path(sketch, "comparator_samples"), os.path.join(run_dir_path(sketch), "inputs", "comparator_samples"))
+
+
+def app_data_path(sketch, subfolder):
+    if hasattr(config, "data_folder_name"):
+        return os.path.join(sketch.dataPath(config.data_folder_name), subfolder)
+    else:
+        return sketch.dataPath(subfolder)
+
+
+def run_output_path(sketch):
+    return os.path.join(RunManager(sketch).run_dir_path, "output")
 
 
 def run_dir_path(sketch):
@@ -104,7 +120,11 @@ class RunManager(object):
     def __new__(cls, sketch):
         if cls._instance is None:
             inst = super(RunManager, cls).__new__(cls)
-            inst.runs_base_path = sketch.dataPath("runs")
+            inst.runs_base_path = app_data_path(sketch, "runs")
+            try: 
+                os.mkdir(inst.runs_base_path)
+            except:
+                pass
             runnumbers = sorted([int(fn.split("-")[1].lstrip("0")) for fn in listfiles(inst.runs_base_path)])
             prevrun = runnumbers[-1] if runnumbers else 0
             inst.run_number = prevrun + 1
@@ -189,10 +209,6 @@ class FrameRateRegulator(object):
 # Generic Python helpers
 #####################################################################
 
-class Settings(object):
-    def attribute_names(self):
-        return self.__dict__.keys()
-
 def configure(obj, config):
     for attr in config.attribute_names():
         setattr(obj, attr, getattr(config, attr))
@@ -208,6 +224,10 @@ def delete_contents(directory):
 
 def copy_folder_to(folderpath, targetdir):
     copy_tree(folderpath, targetdir)
+
+
+def copy_file_to(filepath, targetdir):
+    shutil.copy(filepath, targetdir)
 
 
 def remap(valuetoscale, minallowed, maxallowed, minold, maxold):
@@ -344,13 +364,6 @@ def isnumeric(var):
     except:
         return False
     
-
-def get_attributes(obj, names=None):
-    attributes = {}
-    for var in dir(obj):
-        if names and (var not in names): continue
-        settings[var] = getattr(obj, var)
-    return attributes
 
 def validate_set(name, val):
     if not val: raise ValueError("Variable {} has not been set.".format(name))
