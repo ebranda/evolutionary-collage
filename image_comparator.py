@@ -7,6 +7,7 @@ to a set of sample images and returing a similarity score.
 #add_library('opencv_processing')
 #from gab.opencv import OpenCV # see https://github.com/atduskgreg/opencv-processing
 import utils
+import settings as config
 
 
 # Default settings - Don't change these here. Instead, change them in the settings.py file.
@@ -28,7 +29,7 @@ def toggle_preview():
 
 
 def load_samples(sketch):
-    samplespath = sketch.dataPath("comparator_samples")
+    samplespath = utils.app_data_path(sketch, "comparator_samples")
     for filepath in utils.listfiles(samplespath, fullpath=True):
         img = sketch.loadImage(filepath)
         if img is not None:
