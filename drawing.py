@@ -8,7 +8,7 @@ import math
 import utils
 
 
-### Settings ###
+### Default Settings - Don't change these here. Instead, change them in the settings.py file ###
 
 # Layout
 config_layout = "GridLayout" # "GridLayout" # or "PointLayout" 
