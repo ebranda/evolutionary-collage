@@ -1,6 +1,6 @@
 # Evolutionary Collage
 
-## To install and run this Processing sketch
+## To install and run this Processing sketch for the first time
 
 1. Go to the [releases page](https://github.com/ebranda/evolutionary-collage/releases) and download the most recent release. Unzip the file and move the `Evolutionary Collage` folder to your Processing sketchbook (in _[home] > Documents > Processing_ by default).
 2. Navigate to the `Evolutionary Collage` folder and create the following empty folder structure:
