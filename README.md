@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-
 # Evolutionary Collage
 
 ## To install and run this Processing sketch for the first time
@@ -32,4 +30,4 @@ This process involves installing the latest release as a new sketch in your Proc
 2. Open the `data` folder inside `Evolutionary Collage_COPY`. Make sure that the images inside `comparator_samples` and `parts` are correct. Delete any additional subproject folders (see above). Delete the `runs` folder.
 3. Make sure that your `Evolutionary Collage/settings.py` file is correct.
 3. Zip the entire `Evolutionary Collage` folder and email it to your instructor.
->>>>>>> dev
+
