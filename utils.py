@@ -84,12 +84,9 @@ def copy_input_images(sketch):
 
 def app_data_path(sketch, subfolder):
     if hasattr(config.app, "data_folder_name") and config.app.data_folder_name is not None:
-        folderpath = os.path.join(sketch.dataPath(config.app.data_folder_name), subfolder)
-        if os.path.isdir(folderpath):
-            return folderpath
-        else:
-            raise ValueError("No such folder {}. Check the value of app.data_folder_name in your settings".format(folderpath))
-    return sketch.dataPath(subfolder)
+        return os.path.join(sketch.dataPath(config.app.data_folder_name), subfolder)
+    else:
+        return sketch.dataPath(subfolder)
 
 
 def run_output_path(sketch):
