@@ -12,7 +12,7 @@
 5. Edit the default settings in `settings.py` file as desired. Run the sketch.
 6. Navigate to `data/runs/[run-number]` to view the results. The outputs folder contains the result images. The inputs folder contains copies of the input images used for this run. The `settings.py` file is an exact copy of the settings file used for this run. To restore the input images and settings at a later date, simply copy `settings.py` to the main `Evolutionary Collage` sketch folder and the input images to their respective folders in `Evolutionary Collage/data`.
 
-Note that you can add named folders inside `Evolutionary Collage/data` to better manage your projects. Simply create an empty folder (e.g. `myapp`) in `Evolutionary Collage/data` and place your `comparator_samples` and `parts` image folders inside that folder. Then edit the line at the bottom of `settings.py` so that `None` is chanaged to `"myapp"`. You can then switch between subprojects by editing `settings.py` again.
+Note that you can add named folders inside `Evolutionary Collage/data` to better manage your projects. Simply create an empty folder (e.g. `myapp`) in `Evolutionary Collage/data` and place your `comparator_samples` and `parts` image folders inside that folder. Then edit the variable `app.data_folder_name` in `settings.py` so that `None` is changed to `"myapp"`. You can switch between subprojects by editing `settings.py` again.
 
 
 ### To install updated code

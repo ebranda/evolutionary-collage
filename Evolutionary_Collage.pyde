@@ -2,7 +2,7 @@ import genetic as ga
 import drawing
 import utils
 import image_comparator as ic
-import settings as config
+import adminsettings as config
 
 
 def setup():
@@ -12,7 +12,7 @@ def setup():
     utils.configure(ic, config.ic)
     drawing.initialize()
     ga.initialize(drawing.num_params(), create_phenotype, compute_fitness)
-    if config.testmode:
+    if config.app.testmode:
         print("Exploring the space of random solutions...")
     else:
         print("Starting run {}".format(utils.run_number(this)))
@@ -23,13 +23,13 @@ def setup():
 
 def draw():
     if utils.is_paused(): return
-    if config.testmode:
+    if config.app.testmode:
         frameRate(1)
         image(ga.random_phenotype(), 0, 0)
     else:
         if ga.finished(): return
         image(ga.fittest_phenotype(), 0, 0)
-        utils.autosave(this, ga, drawing, config.autosave_fittest_only)
+        utils.autosave(this, ga, drawing, config.app.autosave_fittest_only)
         ga.evolve()
         ic.draw_preview(this)
 
@@ -45,12 +45,6 @@ def create_phenotype(chromosome):
 def compute_fitness(phenotype):
     score = ic.compare(this, phenotype)
     return score
-
-
-def mouseClicked():
-    utils.toggle_paused()
-    if utils.is_paused(): 
-        print("Paused program. Click in the window again to unpause.")
  
     
 def keyPressed():
@@ -60,7 +54,7 @@ def keyPressed():
     
 # Java calls this function automatically when the program stops
 def stop():
-    if not config.testmode:
+    if not config.app.testmode:
         print("All output was saved to <{}>.".format(utils.run_dir_path(this)))
     print("Exit.")
 

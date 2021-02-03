@@ -12,6 +12,6 @@ out
 *.pyc
 sketch.properties
 backup.py
-settings.py
+adminsettings.py
 fitness.py
 data
