@@ -6,7 +6,10 @@ drawing = Settings()
 ga = Settings()
 ic = Settings()
 
+app.version = "0.41"
+
 #### DON'T CHANGE ANYTHING ABOVE THIS LINE ####
+
 
 # All of these are required
 app.testmode = False
