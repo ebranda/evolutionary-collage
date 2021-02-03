@@ -6,7 +6,7 @@ a drawing from a genome.
 import os
 import math
 import utils
-import settings as config
+import adminsettings as config
 
 
 ### Default Settings - Don't change these here. Instead, change them in the settings.py file ###
@@ -203,6 +203,7 @@ class PartsCatalog(object):
             inst.parts = []
             inst.folder_name = "parts"
             folderpath = utils.app_data_path(sketch, inst.folder_name)
+            inst.folder_path = folderpath
             for filepath in utils.listfiles(folderpath, fullpath=True):
                 img = sketch.loadImage(filepath)
                 if img is not None:
@@ -212,7 +213,7 @@ class PartsCatalog(object):
                 
     def pick(self, idx_normalized):
         if not self.parts:
-            raise RuntimeError("{} module: No parts in catalog. Did you put images in the {} folder?".format(__name__, self.folder_name))
+            raise RuntimeError("{} module: No parts in catalog. Did you put images in the {} folder?".format(__name__, self.folder_path))
         i = utils.normalized_value_to_index(idx_normalized, self.parts)
         #print idx_normalized, i
         return self.parts[i]
