@@ -10,8 +10,7 @@ import time
 import random
 from distutils.dir_util import copy_tree
 import shutil
-
-import adminsettings as config
+import settings as config
 
 
 def autosave(sketch, ga, drawing, fittestonly):

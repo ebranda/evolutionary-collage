@@ -7,7 +7,7 @@ to a set of sample images and returing a similarity score.
 #add_library('opencv_processing')
 #from gab.opencv import OpenCV # see https://github.com/atduskgreg/opencv-processing
 import utils
-import adminsettings as config
+import settings as config
 
 
 # Default settings - Don't change these here. Instead, change them in the settings.py file.
