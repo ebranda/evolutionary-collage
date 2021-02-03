@@ -2,7 +2,7 @@ import genetic as ga
 import drawing
 import utils
 import image_comparator as ic
-import adminsettings as config
+import settings as config
 
 
 def setup():
