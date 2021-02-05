@@ -31,3 +31,29 @@ This process involves installing the latest release as a new sketch in your Proc
 3. Make sure that your `Evolutionary Collage/settings.py` file is correct.
 3. Zip the entire `Evolutionary Collage` folder and email it to your instructor.
 
+
+### To draw a background before parts are rendered:
+
+1. Create a new Python module called `background.py`. The main Processing sketch will automatically import that module if it exists.
+2. Inside that module, define a function called `draw(params, canvas)`. Do any background rendering inside that function. For example, the following code will draw a black background in the top half of the canvas window:
+
+```
+def draw(params, canvas):
+  canvas.fill(0)
+  canvas.rect(0, 0, canvas.width, canvas.height/2)
+```
+
+
+### To define your own fitness function:
+
+1. Create a new Python module called `fitness.py`. The main Processing sketch will automatically import that module if it exists.
+2. Inside that module, define a function called `compute_fitness(phenotype)`. For example, the following code will return a fitness score based on the average pixel grayscale value across all pixels in an image:
+
+```
+def compute_fitness(phenotype):
+  graytotal = 0
+  for px in phenotype.pixels:
+    graytotal += brightness(px)
+  mean = graytotal / len(phenotype.pixels) / 255.0
+  return mean
+```
