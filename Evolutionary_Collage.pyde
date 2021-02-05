@@ -58,8 +58,8 @@ def stop():
         print("All output was saved to <{}>.".format(utils.run_dir_path(this)))
     print("Exit.")
 
-
-# Try loading the optional fitness.py module in case the
+    
+# Try loading the optional fitness module in case the
 # project wants to define a its own fitness function.
 try: 
     import fitness
@@ -67,4 +67,12 @@ try:
         compute_fitness = fitness.compute_fitness # Replace the default fitness function
 except: 
     pass # No module or function found so just use default function in the current module
+
+# Try loading the optional adminsettings module in case the
+# project wants to override any settings in settings.py
+try:
+    import adminsettings
+    adminsettings.override(config)
+except:
+    pass
     

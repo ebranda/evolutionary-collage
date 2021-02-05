@@ -208,6 +208,13 @@ class FrameRateRegulator(object):
 # Generic Python helpers
 #####################################################################
 
+def coerce_list(obj):
+    if type(obj) is list:
+        return obj
+    if type(obj) is tuple:
+        return list(tuple)
+    return [obj]
+
 def configure(obj, config):
     for attr in config.attribute_names():
         setattr(obj, attr, getattr(config, attr))
