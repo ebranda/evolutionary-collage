@@ -39,6 +39,21 @@ This process involves installing the latest release as a new sketch in your Proc
 
 ```
 def draw(params, canvas):
-	canvas.fill(0)
-	canvas.rect(0, 0, canvas.width, canvas.height/2)
+  canvas.fill(0)
+  canvas.rect(0, 0, canvas.width, canvas.height/2)
+```
+
+
+### To define your own fitness function:
+
+1. Create a new Python module called fitness.py
+2. Inside that module, define a function called `compute_fitness(phenotype)`. For example, the following code will return a fitness score based on the average pixel grayscale value across all pixels in an image:
+
+```
+def compute_fitness(phenotype):
+  graytotal = 0
+  for px in phenotype.pixels:
+    graytotal += brightness(px)
+  mean = graytotal / len(phenotype.pixels)
+  return mean
 ```
