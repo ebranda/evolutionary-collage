@@ -31,3 +31,14 @@ This process involves installing the latest release as a new sketch in your Proc
 3. Make sure that your `Evolutionary Collage/settings.py` file is correct.
 3. Zip the entire `Evolutionary Collage` folder and email it to your instructor.
 
+
+### To draw a background before parts are rendered:
+
+1. Create a new Python module called background.py
+2. Inside that module, define a function called `draw(params, canvas)`. Do any background rendering inside that function. For example, the following code will draw a black background in the top half of the canvas window:
+
+```
+def draw(params, canvas):
+	canvas.fill(0)
+	canvas.rect(0, 0, canvas.width, canvas.height/2)
+```
