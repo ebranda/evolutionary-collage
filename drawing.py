@@ -160,6 +160,10 @@ def render(sketch, params, canvas=None):
     if canvas is None: 
         canvas = sketch # If no canvas was provided then use the sketch
     canvas.background(255)
+    try: 
+        draw_background(params, canvas)
+    except: 
+        pass
     canvas.noFill()
     canvas.pushMatrix()
     canvas.scale(config_canvas_scale)
@@ -219,8 +223,18 @@ class PartsCatalog(object):
         i = utils.normalized_value_to_index(idx_normalized, self.parts)
         #print idx_normalized, i
         return self.parts[i]
-    
-    
+
+
+# Try loading the optional background.py module in case the
+# project wants to draw anything on the canvas before the 
+# drawing render.
+try: 
+    import background
+    if hasattr(background, "draw"):
+        global draw_background
+        draw_background = background.draw
+except: 
+    pass # Do nothing
 
 
 

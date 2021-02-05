@@ -13,5 +13,6 @@ out
 sketch.properties
 backup.py
 adminsettings.py
+background.py
 fitness.py
 data

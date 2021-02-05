@@ -59,34 +59,58 @@ def draw_preview(sketch):
     
     
 def img_preprocess(sketch, pImg, is_sample=False):
+    img = img_resize(pImg)
+    pixels_for_modes = []
+    modes = utils.coerce_list(config_preprocess_mode)
+    imgs = [img]
+    for i in range(len(modes)-1):
+        imgs.append(img.copy())
+    for mode, img in zip(modes, imgs):
+        if mode == "color":
+            vals = [sketch.hue(p) for p in img.pixels]
+            pixels_for_modes.append(vals)
+            if is_sample:
+                img_validate_color(vals)
+        elif mode == "gray":
+            img.filter(sketch.GRAY)
+            pixels_for_modes.append([sketch.brightness(p) for p in img.pixels])
+        elif mode == "binary":
+            if config_erode_binary:
+                img.filter(sketch.ERODE)
+            img.filter(sketch.GRAY)
+            img.filter(sketch.THRESHOLD, config_threshold/255.0)
+            pixels_for_modes.append([sketch.brightness(p) for p in img.pixels])
+        else:
+            raise ValueError("Illegal value for config_preprocess_mode <{}>".format(config_preprocess_mode))
+    pixels = img_mean_pixel_values(pixels_for_modes)
+    return img, pixels
+    
+
+def img_resize(pImg):
     sizes = [5, 9, 15, 25, 50]
     i = utils.constrain(int(round(config_strictness)), 1, len(sizes)) - 1
     img = pImg.copy()
     if img.width > img.height:
         img.resize(sizes[i], 0)
     else:
-        img.resize(0, sizes[i])        
-    if config_preprocess_mode == "color":
-        pixels = [sketch.hue(p) for p in img.pixels]
-        if is_sample:
-            mean = sum(pixels) / len(pixels)
-            grayscale = sum(1 if p == mean else 0 for p in pixels)
-            if grayscale:
-                print("WARNING: config_preprocess_mode is set to color but your comparator image appears to be grayscale.")
-                print("   You should change that setting to 'gray' or you will get unpredictable fitness results.") 
-    elif config_preprocess_mode == "gray":
-        img.filter(sketch.GRAY)
-        pixels = [sketch.brightness(p) for p in img.pixels]
-    elif config_preprocess_mode == "binary":
-        if config_erode_binary:
-            img.filter(sketch.ERODE)
-        img.filter(sketch.GRAY)
-        img.filter(sketch.THRESHOLD, config_threshold/255.0)
-        pixels = [sketch.brightness(p) for p in img.pixels]
-    else:
-        raise ValueError("Illegal value for config_preprocess_mode <{}>".format(config_preprocess_mode))
-    return img, pixels
+        img.resize(0, sizes[i])
+    return img
+    
+    
+def img_validate_color(pixels):
+    mean = sum(pixels) / len(pixels)
+    isgrayscale = sum(1 if p == mean else 0 for p in pixels)
+    if isgrayscale:
+        print("WARNING: config_preprocess_mode is set to color but your comparator image appears to be grayscale.")
+        print("   You should change that setting to 'gray' or you will get unpredictable fitness results.")
 
+
+def img_mean_pixel_values(pixels_for_modes):
+    if len(pixels_for_modes) > 1:
+        return [sum(p) / float(len(p)) for p in zip(*pixels_for_modes)] # Average the pixel values across modes
+    else:
+        return list(pixels_for_modes[0])
+    
 
 def compare(sketch, pImg):
     ''' Compare an image to the set of sample images.
@@ -119,3 +143,4 @@ def pixel_score(px1, px2):
     
 def to_rgb(sketch, px):
     return [px >> 16 & 0xFF, px >> 8 & 0xFF, px & 0xFF, sketch.alpha(px)]
+    
