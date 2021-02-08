@@ -43,7 +43,7 @@ version of this file if you make changes that break anything.
 https://github.com/ebranda/evolutionary-collage/blob/main/settings.py
 
 app.testmode
-Set to False to explore the solution space and True to run the solver
+Set to True to explore the solution space and False to run the solver
 
 app.autosave_fittest_only
 Set to True to save a high-res image of only the fittest scheme (generally, leave it at True)
