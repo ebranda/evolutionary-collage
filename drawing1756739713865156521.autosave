@@ -1,4 +1,4 @@
-"""
+1"""
 This module provides all of the functionality required to build
 a drawing from a genome.
 
@@ -106,7 +106,7 @@ class GridLayout(object):
             rows = cols = int(math.ceil(sqrt(len(params))))
         else:
             cols = config_number_of_columns
-            rows = max(1, int(math.ceil(len(params) / float(cols))))
+            rows = min(1, math.ceil(len(params) / float(cols)))
         self.grid = utils.Grid(canvas.width, canvas.height, cols, rows)
         parts = []
         for i in range(min(len(params), len(self.grid.cells))):

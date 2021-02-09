@@ -57,6 +57,10 @@ Specifies the layout to use ("GridLayout" or "PointLayout")
 drawing.config_number_of_parts
 For grid layout, use 9, 16, 25, 36, 49, 64, 81 (i.e. squares of integers)
 
+drawing.config_number_of_columns
+Applies to grid layout only. Optional. If unspecified then grid will be square, based on config_number_of_parts.
+If specified then the number of grid rows will be config_number_of_parts / config_number_of_columns.
+
 drawing.config_part_uniform_scale
 Scale the parts before they are placed on the canvas.
 
@@ -80,6 +84,9 @@ A multiple of the grid cell dimension. Set to 0 to disable nudge and keep parts 
 
 drawing.config_sort_parts_by_filename
 Set to True to override the default draw order of parts, which draws largest images first and smallest last.
+
+drawing.config_render_grid
+Applies to grid layout only. Optional. If included and set to True then the grid will be drawn before parts are rendered.
 
 ic.config_strictness
 1-7, with 7 being the most accurate representation of the comparator image. Use only the highest value you need. 

@@ -1,4 +1,4 @@
-"""
+2"""
 This module provides all of the functionality required to build
 a drawing from a genome.
 
@@ -106,7 +106,7 @@ class GridLayout(object):
             rows = cols = int(math.ceil(sqrt(len(params))))
         else:
             cols = config_number_of_columns
-            rows = max(1, int(math.ceil(len(params) / float(cols))))
+            rows = min(1, math.ceil(len(params) / float(cols)))
         self.grid = utils.Grid(canvas.width, canvas.height, cols, rows)
         parts = []
         for i in range(min(len(params), len(self.grid.cells))):
@@ -154,12 +154,9 @@ class GridLayout(object):
         return nudge_x, nudge_y
         
     def _render_grid(self, sketch):
-        c1 = color(255,0,0,100)
-        c2 = color(0,0,255,100)
-        colors = [c1, c2, c1]
-        for cell in self.grid.cells:
-            color_idx = cell.col % 2 + cell.row % 2
-            sketch.fill(colors[color_idx])
+        for i in range(len(self.grid.cells)):
+            cell = self.grid.cells[i]
+            sketch.fill(color(255,0,0,100) if i % 2 else color(0,0,255,100))
             sketch.rect(cell.left, cell.top, cell.width, cell.height)
             sketch.noFill()
     

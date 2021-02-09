@@ -251,14 +251,16 @@ class Grid(object):
             top = height * float(r) / rows
             for c in range(cols):
                 left = width * float(c) / cols
-                self.cells.append(GridCell(left, top, self.cell_dim_x, self.cell_dim_y))
+                self.cells.append(GridCell(left, top, self.cell_dim_x, self.cell_dim_y, r, c))
                 
 class GridCell(object):
-    def __init__(self, left, top, width, height):
+    def __init__(self, left, top, width, height, row, col):
         self.left = left
         self.top = top
         self.width = width
         self.height = height
+        self.row = row
+        self.col = col
         self.center = Point(self.left + self.width / 2.0, self.top + self.height / 2.0)
         self.top_left = Point(self.left, self.top)
         self.bottom_right = Point(self.left + self.width, self.top + self.height)
