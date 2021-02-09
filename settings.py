@@ -78,6 +78,9 @@ Set to True to crop parts to grid cells or False to allow parts to overflow grid
 drawing.config_nudge_factor_max
 A multiple of the grid cell dimension. Set to 0 to disable nudge and keep parts in center of cells.
 
+drawing.config_sort_parts_by_filename
+Set to True to override the default draw order of parts, which draws largest images first and smallest last.
+
 ic.config_strictness
 1-5, with 5 being the most accurate representation of the comparator image. Use only the highest value you need.
 

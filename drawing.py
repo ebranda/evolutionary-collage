@@ -18,6 +18,7 @@ config_canvas_scale = 0.90 # Scale down drawing to create margins
 config_disable_rotation = False
 config_snap_angles = [] #[0, 90, 180, 270] #[0, 45, 90, 135, 180, 225, 270, 315] # If left empty, angles will be selected from 0-359. 
 config_rotation_jitter = 0.0 # Degrees, 0.0 to 20.0  - set to 0.0 to disable jitter
+config_sort_parts_by_filename = False
 
 # Settings specific to GridLayout
 config_crop_to_cell = False # Crops any part that overflows the grid cell dimensions
@@ -31,7 +32,7 @@ hi_res_width = 1200
 class Part(object):
     
     def __init__(self, canvas, catalog, image_param):
-        self.image = catalog.pick(image_param)
+        self.image, self.z_order, self.filename = catalog.pick(image_param)
         imgscale = canvas.width / float(hi_res_width) # Assume that images are scaled to hi-res version
         imgscale *= config_part_uniform_scale
         self.w = self.image.width * imgscale 
@@ -79,6 +80,7 @@ class PointLayout(object):
             rotation_angle = 0 if config_disable_rotation else p.pop(0)
             part.set_rotation(rotation_angle, config_snap_angles, config_rotation_jitter)
             parts.append(part)
+        parts = sort_z(parts)
         return parts
     
     def render(self, sketch, catalog, params, canvas):
@@ -115,6 +117,7 @@ class GridLayout(object):
             rotation_angle = 0 if config_disable_rotation else p.pop(0)
             part.set_rotation(rotation_angle, config_snap_angles, config_rotation_jitter)
             parts.append(part)
+        parts = sort_z(parts)
         return parts
             
     def render(self, sketch, catalog, params, canvas):
@@ -162,7 +165,7 @@ def render(sketch, params, canvas=None):
     canvas.background(255)
     try: 
         draw_background(params, canvas)
-    except: 
+    except Exception: 
         pass
     canvas.noFill()
     canvas.pushMatrix()
@@ -196,6 +199,10 @@ def num_params():
 
 def remap_normalized(val, minval, maxval):
     return val * (maxval - minval) + minval
+    
+
+def sort_z(parts):
+    return utils.sort_by_key(parts, [part.z_order for part in parts])
 
  
 class PartsCatalog(object):
@@ -210,19 +217,32 @@ class PartsCatalog(object):
             inst.folder_name = "parts"
             folderpath = utils.app_data_path(sketch, inst.folder_name)
             inst.folder_path = folderpath
+            inst.filenames = utils.listfiles(folderpath, fullpath=False)
             for filepath in utils.listfiles(folderpath, fullpath=True):
                 img = sketch.loadImage(filepath)
                 if img is not None:
                     inst.parts.append(img)
+            inst.sort(sketch)
             cls._instance = inst
         return cls._instance
+    
+    def sort(self, sketch):
+        if config_sort_parts_by_filename:
+            self.parts = utils.sort_by_key(self.parts, self.filenames)
+            self.filenames = utils.sort_by_key(self.filenames, self.filenames)
+        else:
+            sizes = []
+            for img in self.parts:
+                sizes.append(len([1 for p in img.pixels if sketch.alpha(p) > 0]))
+            self.parts = utils.sort_by_key(self.parts, sizes, reverse=True)
+            self.filenames = utils.sort_by_key(self.filenames, sizes, reverse=True)
                 
     def pick(self, idx_normalized):
         if not self.parts:
             raise RuntimeError("{} module: No parts in catalog. Did you put images in the {} folder?".format(__name__, self.folder_path))
         i = utils.normalized_value_to_index(idx_normalized, self.parts)
         #print idx_normalized, i
-        return self.parts[i]
+        return self.parts[i], i, self.filenames[i]
 
 
 # Try loading the optional background.py module in case the
