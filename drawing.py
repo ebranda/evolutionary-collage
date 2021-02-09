@@ -18,11 +18,13 @@ config_canvas_scale = 0.90 # Scale down drawing to create margins
 config_disable_rotation = False
 config_snap_angles = [] #[0, 90, 180, 270] #[0, 45, 90, 135, 180, 225, 270, 315] # If left empty, angles will be selected from 0-359. 
 config_rotation_jitter = 0.0 # Degrees, 0.0 to 20.0  - set to 0.0 to disable jitter
+config_sort_parts_by_filename = False
 
 # Settings specific to GridLayout
 config_crop_to_cell = False # Crops any part that overflows the grid cell dimensions
 config_nudge_factor_max = 0.0 # A multiple of the grid cell dimension. Set to 0 to disable nudge and keep parts in center of cells.
-render_grid = False # Specify whether you want to preview the grid
+config_render_grid = False # Specify whether you want to preview the grid
+config_number_of_columns = None
 
 # Rendering
 hi_res_width = 1200
@@ -31,7 +33,7 @@ hi_res_width = 1200
 class Part(object):
     
     def __init__(self, canvas, catalog, image_param):
-        self.image = catalog.pick(image_param)
+        self.image, self.z_order, self.filename = catalog.pick(image_param)
         imgscale = canvas.width / float(hi_res_width) # Assume that images are scaled to hi-res version
         imgscale *= config_part_uniform_scale
         self.w = self.image.width * imgscale 
@@ -79,6 +81,7 @@ class PointLayout(object):
             rotation_angle = 0 if config_disable_rotation else p.pop(0)
             part.set_rotation(rotation_angle, config_snap_angles, config_rotation_jitter)
             parts.append(part)
+        parts = sort_z(parts)
         return parts
     
     def render(self, sketch, catalog, params, canvas):
@@ -99,7 +102,11 @@ class GridLayout(object):
             self.params_per_part += 2
         
     def build_parts(self, catalog, params, canvas):
-        rows = cols = int(round(sqrt(len(params))))
+        if config_number_of_columns is None:
+            rows = cols = int(math.ceil(sqrt(len(params))))
+        else:
+            cols = config_number_of_columns
+            rows = max(1, int(math.ceil(len(params) / float(cols))))
         self.grid = utils.Grid(canvas.width, canvas.height, cols, rows)
         parts = []
         for i in range(min(len(params), len(self.grid.cells))):
@@ -115,11 +122,12 @@ class GridLayout(object):
             rotation_angle = 0 if config_disable_rotation else p.pop(0)
             part.set_rotation(rotation_angle, config_snap_angles, config_rotation_jitter)
             parts.append(part)
+        parts = sort_z(parts)
         return parts
             
     def render(self, sketch, catalog, params, canvas):
         parts = self.build_parts(catalog, params, canvas)
-        if render_grid:
+        if config_render_grid:
             self._render_grid(sketch)
         for i in range(min(len(parts), len(self.grid.cells))):
             cell = self.grid.cells[i]
@@ -146,9 +154,12 @@ class GridLayout(object):
         return nudge_x, nudge_y
         
     def _render_grid(self, sketch):
-        for i in range(len(self.grid.cells)):
-            cell = self.grid.cells[i]
-            sketch.fill(color(255,0,0,100) if i % 2 else color(0,0,255,100))
+        c1 = color(255,0,0,100)
+        c2 = color(0,0,255,100)
+        colors = [c1, c2, c1]
+        for cell in self.grid.cells:
+            color_idx = cell.col % 2 + cell.row % 2
+            sketch.fill(colors[color_idx])
             sketch.rect(cell.left, cell.top, cell.width, cell.height)
             sketch.noFill()
     
@@ -162,7 +173,7 @@ def render(sketch, params, canvas=None):
     canvas.background(255)
     try: 
         draw_background(params, canvas)
-    except: 
+    except Exception: 
         pass
     canvas.noFill()
     canvas.pushMatrix()
@@ -196,6 +207,10 @@ def num_params():
 
 def remap_normalized(val, minval, maxval):
     return val * (maxval - minval) + minval
+    
+
+def sort_z(parts):
+    return utils.sort_by_key(parts, [part.z_order for part in parts])
 
  
 class PartsCatalog(object):
@@ -210,19 +225,32 @@ class PartsCatalog(object):
             inst.folder_name = "parts"
             folderpath = utils.app_data_path(sketch, inst.folder_name)
             inst.folder_path = folderpath
+            inst.filenames = utils.listfiles(folderpath, fullpath=False)
             for filepath in utils.listfiles(folderpath, fullpath=True):
                 img = sketch.loadImage(filepath)
                 if img is not None:
                     inst.parts.append(img)
+            inst.sort(sketch)
             cls._instance = inst
         return cls._instance
+    
+    def sort(self, sketch):
+        if config_sort_parts_by_filename:
+            self.parts = utils.sort_by_key(self.parts, self.filenames)
+            self.filenames = utils.sort_by_key(self.filenames, self.filenames)
+        else:
+            sizes = []
+            for img in self.parts:
+                sizes.append(len([1 for p in img.pixels if sketch.alpha(p) > 0]))
+            self.parts = utils.sort_by_key(self.parts, sizes, reverse=True)
+            self.filenames = utils.sort_by_key(self.filenames, sizes, reverse=True)
                 
     def pick(self, idx_normalized):
         if not self.parts:
             raise RuntimeError("{} module: No parts in catalog. Did you put images in the {} folder?".format(__name__, self.folder_path))
         i = utils.normalized_value_to_index(idx_normalized, self.parts)
         #print idx_normalized, i
-        return self.parts[i]
+        return self.parts[i], i, self.filenames[i]
 
 
 # Try loading the optional background.py module in case the

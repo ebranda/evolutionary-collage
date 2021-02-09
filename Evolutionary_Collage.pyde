@@ -24,7 +24,7 @@ def setup():
 def draw():
     if utils.is_paused(): return
     if config.app.testmode:
-        frameRate(1)
+        frameRate(0.5)
         image(ga.random_phenotype(), 0, 0)
     else:
         if ga.finished(): return

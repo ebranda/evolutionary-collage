@@ -43,7 +43,7 @@ version of this file if you make changes that break anything.
 https://github.com/ebranda/evolutionary-collage/blob/main/settings.py
 
 app.testmode
-Set to False to explore the solution space and True to run the solver
+Set to True to explore the solution space and False to run the solver
 
 app.autosave_fittest_only
 Set to True to save a high-res image of only the fittest scheme (generally, leave it at True)
@@ -56,6 +56,10 @@ Specifies the layout to use ("GridLayout" or "PointLayout")
 
 drawing.config_number_of_parts
 For grid layout, use 9, 16, 25, 36, 49, 64, 81 (i.e. squares of integers)
+
+drawing.config_number_of_columns
+Applies to grid layout only. Optional. If unspecified then grid will be square, based on config_number_of_parts.
+If specified then the number of grid rows will be config_number_of_parts / config_number_of_columns.
 
 drawing.config_part_uniform_scale
 Scale the parts before they are placed on the canvas.
@@ -78,8 +82,15 @@ Set to True to crop parts to grid cells or False to allow parts to overflow grid
 drawing.config_nudge_factor_max
 A multiple of the grid cell dimension. Set to 0 to disable nudge and keep parts in center of cells.
 
+drawing.config_sort_parts_by_filename
+Set to True to override the default draw order of parts, which draws largest images first and smallest last.
+
+drawing.config_render_grid
+Applies to grid layout only. Optional. If included and set to True then the grid will be drawn before parts are rendered.
+
 ic.config_strictness
-1-5, with 5 being the most accurate representation of the comparator image. Use only the highest value you need.
+1-7, with 7 being the most accurate representation of the comparator image. Use only the highest value you need. 
+Start with 4, then try 5. Values of 6 or 7 will be more accurate but very slow to compute.
 
 ic.config_preprocess_mode
 "gray" for grayscale comparators, "binary" for pure black and white, or "color" for color comparators.

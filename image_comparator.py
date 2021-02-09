@@ -11,7 +11,7 @@ import settings as config
 
 
 # Default settings - Don't change these here. Instead, change them in the settings.py file.
-config_strictness = 4 # 1-5
+config_strictness = 4 # 1-7
 config_preprocess_mode = "gray" # "binary" or "gray" or "color"
 config_threshold = 230 # 0-255 higher value includes lighter grayscale values
 config_erode_binary = False
@@ -87,7 +87,7 @@ def img_preprocess(sketch, pImg, is_sample=False):
     
 
 def img_resize(pImg):
-    sizes = [5, 9, 15, 25, 50]
+    sizes = [5, 9, 15, 25, 50, 100, 200]
     i = utils.constrain(int(round(config_strictness)), 1, len(sizes)) - 1
     img = pImg.copy()
     if img.width > img.height:
