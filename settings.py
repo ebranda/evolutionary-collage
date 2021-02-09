@@ -82,7 +82,8 @@ drawing.config_sort_parts_by_filename
 Set to True to override the default draw order of parts, which draws largest images first and smallest last.
 
 ic.config_strictness
-1-5, with 5 being the most accurate representation of the comparator image. Use only the highest value you need.
+1-7, with 7 being the most accurate representation of the comparator image. Use only the highest value you need. 
+Start with 4, then try 5. Values of 6 or 7 will be more accurate but very slow to compute.
 
 ic.config_preprocess_mode
 "gray" for grayscale comparators, "binary" for pure black and white, or "color" for color comparators.
