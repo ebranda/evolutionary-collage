@@ -96,12 +96,12 @@ class Evolver(object):
     
     def __init__(self):
         self.population = []
-        self.state = EvolverState()
     
     def initialize(self, genomesize, phenotype_func, fitness_func, popsize=None):
         ''' Initialize the population and evolver state.'''
         if self.initialized: return
         print("Initializing the solver...")
+        self.state = EvolverState()
         self.phenotype_function = phenotype_func
         self.fitness_function = fitness_func
         if popsize is None:
@@ -121,7 +121,7 @@ class Evolver(object):
         '''
         if not self.initialized:
             raise RuntimeError("ERROR: Evolver.evolve() called before Evolver has been initialized")
-        
+
         # Make sure the search is not over
         if self.state.finished: return
     
