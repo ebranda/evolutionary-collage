@@ -42,6 +42,7 @@ def load_samples(sketch):
 
 def draw_preview(sketch):
     if not preview: return
+    if not sample_images: return
     sketch.fill(255, 150)
     sketch.rect(0, 0, sketch.width, sketch.height)
     sketch.noFill()
@@ -67,7 +68,8 @@ def img_preprocess(sketch, pImg, is_sample=False):
         imgs.append(img.copy())
     for mode, img in zip(modes, imgs):
         if mode == "color":
-            vals = [sketch.hue(p) for p in img.pixels]
+            #vals = [sketch.hue(p) for p in img.pixels]
+            vals = [utils.mean([sketch.red(p), sketch.green(p), sketch.blue(p)]) for p in img.pixels]
             pixels_for_modes.append(vals)
             if is_sample:
                 img_validate_color(vals)

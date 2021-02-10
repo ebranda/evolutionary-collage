@@ -132,20 +132,82 @@ class RunManager(object):
             cls._instance = inst
         return cls._instance
 
-        
+
+#####################################################################
+# Fitness helpers
+#####################################################################
+
+
+def score_density(grays, threshld, targetdensity):
+    thresholded = threshold(grays, threshld)
+    targetcount = targetdensity * len(grays)
+    densityscore = score_occurrences(thresholded, 0, targetcount)
+    return densityscore
+
+def score_gray_levels(values, target):
+    error = abs(mean(values) - target) / max(target, 255-target)
+    return 1.0 - error
+    
+def threshold(values, threshold):
+    return [0.0 if v < threshold else 255.0 for v in values]
+   
+def score_occurrences(values, targetvalue, targetcount):
+    count = 0
+    for v in values:
+        if v == targetvalue:
+            count += 1
+    error = abs(count-targetcount) / float(max(targetcount, len(values)-targetcount))
+    return 1.0 - error
+
+def score_symmetry(matrix):
+    score = 0
+    for row in matrix:
+        left, right = split_list(row)
+        right.reverse()
+        rowscore = 0
+        for i in range(len(left)):
+            colscore = 1.0 - abs(left[i] - right[i]) / 255.0
+            rowscore += colscore
+        score += rowscore / float(len(left))
+    return (score / float(len(matrix))) ** 2
+    
+    
 
 #####################################################################
 # Processing-specific helpers
 #####################################################################
 
 
+def extract_pixel_values(pimg, samplesize, mode="gray", threshold=128, normalized=False):
+    img = pimg.copy() # Create a copy before resizing so we preserve the original
+    img.resize(samplesize, samplesize)
+    n = 255.0 if normalized else 1.0
+    if mode == "gray":
+        return [brightness(pixel)/n for pixel in img.pixels]
+    if mode == "color":
+        return [hue(pixel)/n for pixel in img.pixels]
+    if mode == "binary":
+        img.filter(GRAY)
+        img.filter(THRESHOLD, threshold/255.0)
+        return [brightness(pixel)/n for pixel in img.pixels]
+    if mode == "color":
+        vals = []
+        for pixel in img.pixels:
+            r = red(pixel)
+            g = green(pixel)
+            b = blue(pixel)
+            avg = mean([r, g, b])
+            vals.append(avg/n)
+        return vals
+        
+
 class GraphicsBuffer(object):
     # Enforce a singleton pattern that allows only one instance
     # per width+height pair to be created.
     _instances = {}
     def __new__(cls, createGraphics, canvas_width, canvas_height):
-        w = int(round(canvas_width))
-        h = int(round(canvas_height))
+        w = int(math.ceil(canvas_width))
+        h = int(math.ceil(canvas_height))
         key = "{}_{}".format(w, h)
         if key not in cls._instances:
             cls._instances[key] = createGraphics(w, h)
@@ -178,7 +240,7 @@ class FrameRateRegulator(object):
             cls._instance.starttime = time.time()
         return cls._instance
     
-    def __init__(self, sketch, samplesize=10, tolerance=1.5):
+    def __init__(self, sketch, samplesize=5, tolerance=1.5):
         self.sketch = sketch
         self.sample_size = samplesize
         self.tolerance = tolerance
@@ -198,10 +260,9 @@ class FrameRateRegulator(object):
             current_frameduration = 1.0 / frameRate
             if current_frameduration < mean_duration:
                 new_frameduration = mean_duration * self.tolerance
-                new_frame_rate = round(1.0 / new_frameduration, 1)
+                new_frame_rate = round(1.0 / new_frameduration, 4)
                 self.sketch.frameRate(new_frame_rate)
                 print("Automatically adjusted sketch frame rate to {} fps".format(new_frame_rate))
- 
                 
                 
 #####################################################################
@@ -236,7 +297,7 @@ def copy_file_to(filepath, targetdir):
     shutil.copy(filepath, targetdir)
 
 
-def remap(valuetoscale, minallowed, maxallowed, minold, maxold):
+def remap(valuetoscale, minallowed, maxallowed, minold=0.0, maxold=1.0):
     return (maxallowed - minallowed) * (valuetoscale - minold) / (maxold - minold) + minallowed
 
 
@@ -335,6 +396,19 @@ def partition_list(inputList, chunkSize):
     return [inputList[i:i+chunkSize] for i in range(0, len(inputList), chunkSize)]
 
 
+def split_list(values, cullaxis=True):
+    left = values[:len(values)/2]
+    right = values[len(values)/2:]
+    if cullaxis and len(right) > len(left):
+        right.pop(0)
+    return left, right
+    
+
+def flip_matrix(twodlist):
+    return [list(subarray) for subarray in zip(*twodlist)]
+    
+
+
 def listfiles(parent_path, sorted=True, exclude_dotfiles=True, fullpath=False):
     try:
         files = os.listdir(parent_path)
@@ -402,3 +476,27 @@ def time_str(secs):
     mins = int(round(secs)) / 60
     secs = round(secs - (mins * 60))
     return "{} min {} sec".format(mins, secs)
+    
+def mean(data):
+    """Return the sample arithmetic mean of data."""
+    n = len(data)
+    if n < 1:
+        raise ValueError('mean requires at least one data point')
+    return sum(data)/float(n)
+
+def _ss(data):
+    """Return sum of square deviations of sequence data."""
+    c = mean(data)
+    ss = sum((x-c)**2 for x in data)
+    return ss
+
+def stddev(data, ddof=0):
+    """Calculates the population standard deviation
+    by default; specify ddof=1 to compute the sample
+    standard deviation."""
+    n = len(data)
+    if n < 2:
+        raise ValueError('variance requires at least two data points')
+    ss = _ss(data)
+    pvar = ss/(n-ddof)
+    return pvar**0.5

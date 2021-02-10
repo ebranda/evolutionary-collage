@@ -19,6 +19,8 @@ def setup():
         print("Press spacebar to toggle preview of processed images.")
         utils.create_report(this, drawing, ga, ic)
         utils.copy_input_images(this)
+        global fr
+        fr = utils.FrameRateRegulator(this)
 
 
 def draw():
@@ -28,10 +30,14 @@ def draw():
         image(ga.random_phenotype(), 0, 0)
     else:
         if ga.finished(): return
+        if config.app.regulate_frame_rate:
+            fr.start_draw()
         image(ga.fittest_phenotype(), 0, 0)
         utils.autosave(this, ga, drawing, config.app.autosave_fittest_only)
         ga.evolve()
         ic.draw_preview(this)
+        if config.app.regulate_frame_rate:
+            fr.end_draw(frameRate)
 
 
 # Convert a list of numbers (genes) to a drawing image.

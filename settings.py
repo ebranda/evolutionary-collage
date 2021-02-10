@@ -6,7 +6,7 @@ drawing = Settings()
 ga = Settings()
 ic = Settings()
 
-app.version = "0.42"
+app.version = "0.44"
 
 #### DON'T CHANGE ANYTHING ABOVE THIS LINE ####
 
@@ -15,19 +15,24 @@ app.version = "0.42"
 app.testmode = False
 app.autosave_fittest_only = True
 app.data_folder_name = None
+app.regulate_frame_rate = True
 
 # Now optionally override any module settings you wish to customize.
 drawing.config_layout = "GridLayout" 
 drawing.config_number_of_parts = 25
 drawing.config_part_uniform_scale = 0.9
+drawing.config_part_scale_min = 1.0
+drawing.config_part_scale_max = 1.0
 drawing.config_canvas_scale = 0.85
 drawing.config_disable_rotation = False
-drawing.config_snap_angles = []
+drawing.config_snap_angles = [0, 90, 180, 270]
 drawing.config_rotation_jitter = 0.0
 drawing.config_crop_to_cell = False
 drawing.config_nudge_factor_max = 0.0
+drawing.config_sort_parts_by_filename = False
 ic.config_strictness = 4
 ic.config_preprocess_mode = "gray"
+ga.max_stagnant_generations = 500
 
 
 '''
@@ -64,6 +69,10 @@ If specified then the number of grid rows will be config_number_of_parts / confi
 drawing.config_part_uniform_scale
 Scale the parts before they are placed on the canvas.
 
+drawing.config_part_scale_min
+drawing.config_part_scale_max
+Sets the lower and upper limits for part scaling using genome. Set both to 1.0 to disable scaling using genome.
+
 drawing.config_canvas_scale
 Scale down the entire drawing to create margins
 
@@ -93,8 +102,9 @@ ic.config_strictness
 Start with 4, then try 5. Values of 6 or 7 will be more accurate but very slow to compute.
 
 ic.config_preprocess_mode
-"gray" for grayscale comparators, "binary" for pure black and white, or "color" for color comparators.
+"gray" for grayscale comparators, "binary" for pure black and white, "color" for full color comparators.
+
+ga.max_stagnant_generations
+Sets the maximum number of unchanged generations after which the solver will stop searching.
 
 '''
-
-

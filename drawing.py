@@ -14,6 +14,8 @@ import settings as config
 config_layout = "GridLayout" # "GridLayout" # or "PointLayout" 
 config_number_of_parts = 25 # 9, 16, 25, 36, 49, 64, 81
 config_part_uniform_scale = 1.1
+config_part_scale_min = 1.0 # Set min and max to 1.0 to disable scaling of parts using genome
+config_part_scale_max = 1.0
 config_canvas_scale = 0.90 # Scale down drawing to create margins
 config_disable_rotation = False
 config_snap_angles = [] #[0, 90, 180, 270] #[0, 45, 90, 135, 180, 225, 270, 315] # If left empty, angles will be selected from 0-359. 
@@ -32,10 +34,13 @@ hi_res_width = 1200
 
 class Part(object):
     
-    def __init__(self, canvas, catalog, image_param):
+    def __init__(self, canvas, catalog, image_param, scale_param=None):
         self.image, self.z_order, self.filename = catalog.pick(image_param)
         imgscale = canvas.width / float(hi_res_width) # Assume that images are scaled to hi-res version
         imgscale *= config_part_uniform_scale
+        if scale_param is not None:
+            partscale = utils.remap(scale_param, config_part_scale_min, config_part_scale_max)
+            imgscale *= partscale
         self.w = self.image.width * imgscale 
         self.h = self.image.height * imgscale
     
@@ -52,7 +57,7 @@ class Part(object):
         self.x = self.cx - self.w / 2.0
         self.y = self.cy - self.h / 2.0
         
-    def render(self, sketch, canvas):
+    def render(self, canvas):
         canvas.pushMatrix()
         canvas.translate(self.cx, self.cy)
         canvas.rotate(radians(self.rotation))
@@ -66,15 +71,19 @@ class PointLayout(object):
     '''
     def initialize(self):
         '''Initialize after module load so config variables are not bound at load time.'''
-        self.params_per_part = 4
+        self.params_per_part = 5
         if config_disable_rotation:
+            self.params_per_part -= 1
+        self.scale_disabled = config_part_scale_min == config_part_scale_max
+        if self.scale_disabled:
             self.params_per_part -= 1
     
     def build_parts(self, catalog, params, canvas):
         parts = []
         for partparams in params:
             p = list(partparams) # Make a copy so we can remove items from front of list until empty
-            part = Part(canvas, catalog, p.pop(0))
+            scale = None if self.scale_disabled else p.pop(0)
+            part = Part(canvas, catalog, p.pop(0), scale)
             cx = p.pop(0) * canvas.width
             cy = p.pop(0) * canvas.height
             part.set_position(cx, cy)
@@ -86,7 +95,7 @@ class PointLayout(object):
     
     def render(self, sketch, catalog, params, canvas):
         for part in self.build_parts(catalog, params, canvas):
-            part.render(sketch, canvas)
+            part.render(canvas)
             
 
 class GridLayout(object):
@@ -95,8 +104,11 @@ class GridLayout(object):
     '''
     def initialize(self):
         '''Initialize after module load so config variables are not bound at load time.'''
-        self.params_per_part = 2
+        self.params_per_part = 3
         if config_disable_rotation:
+            self.params_per_part -= 1
+        self.scale_disabled = config_part_scale_min == config_part_scale_max
+        if self.scale_disabled:
             self.params_per_part -= 1
         if config_nudge_factor_max > 0:
             self.params_per_part += 2
@@ -112,7 +124,8 @@ class GridLayout(object):
         for i in range(min(len(params), len(self.grid.cells))):
             p = list(params[i]) # Make a copy so we can remove items from front of list until empty
             cell = self.grid.cells[i]
-            part = Part(canvas, catalog, p.pop(0))
+            scale = None if self.scale_disabled else p.pop(0)
+            part = Part(canvas, catalog, p.pop(0), scale)
             nudge_x, nudge_y = self._get_nudge(cell, p)
             if config_crop_to_cell:
                 cx, cy = cell.width / 2.0, cell.height / 2.0
@@ -122,7 +135,8 @@ class GridLayout(object):
             rotation_angle = 0 if config_disable_rotation else p.pop(0)
             part.set_rotation(rotation_angle, config_snap_angles, config_rotation_jitter)
             parts.append(part)
-        parts = sort_z(parts)
+        if not config_crop_to_cell:
+            parts = sort_z(parts)
         return parts
             
     def render(self, sketch, catalog, params, canvas):
@@ -134,12 +148,13 @@ class GridLayout(object):
             part = parts[i]
             if config_crop_to_cell:
                 graphics = utils.GraphicsBuffer(sketch.createGraphics, cell.width, cell.height)
+                graphics = sketch.createGraphics(int(cell.width), int(cell.height))
                 graphics.beginDraw()
                 graphics.clear()
                 target = graphics
             else:
                 target = canvas
-            part.render(sketch, target)
+            part.render(target)
             if config_crop_to_cell:
                 graphics.endDraw()
                 canvas.image(graphics, cell.left, cell.top)
