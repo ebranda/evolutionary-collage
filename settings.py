@@ -6,8 +6,6 @@ drawing = Settings()
 ga = Settings()
 ic = Settings()
 
-app.version = "0.44"
-
 #### DON'T CHANGE ANYTHING ABOVE THIS LINE ####
 
 

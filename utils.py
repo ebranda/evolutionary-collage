@@ -47,11 +47,13 @@ def save_hi_res(sketch, ga, drawing, replace=False):
     #print("Saved hi-res image of fittest in generation {}".format(ga.generation_number()))
     
 
-def create_report(sketch, drawing, ga, ic):
+def create_report(sketch, config, drawing, ga, ic):
     runs = RunManager(sketch)
     create_folder(runs.run_dir_path)
     copy_file_to(os.path.join(sketch.sketchPath(), "adminsettings.py"), os.path.join(run_dir_path(sketch)))
     copy_file_to(os.path.join(sketch.sketchPath(), "settings.py"), os.path.join(run_dir_path(sketch)))
+    filepath = os.path.join(runs.run_dir_path, "version.txt")
+    write_strings_to_file(filepath, ["Version: {}".format(config.version)])
     
 
 def create_report_OBS(sketch, drawing, ga, ic):
