@@ -4,6 +4,7 @@ import utils
 import image_comparator as ic
 import settings as config
 
+config.version = "0.45"
 
 def setup():
     size(400, 400)
@@ -17,7 +18,7 @@ def setup():
     else:
         print("Starting run {}".format(utils.run_number(this)))
         print("Press spacebar to toggle preview of processed images.")
-        utils.create_report(this, drawing, ga, ic)
+        utils.create_report(this, config, drawing, ga, ic)
         utils.copy_input_images(this)
         global fr
         fr = utils.FrameRateRegulator(this)
