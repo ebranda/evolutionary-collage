@@ -176,7 +176,12 @@ def score_symmetry(matrix):
         score += rowscore / float(len(left))
     return (score / float(len(matrix))) ** 2
     
+def score_target(val, targetval, minval=0.0, maxval=1.0):
+    error = abs(val - targetval)
+    errornormalized = error / float(max(targetval-minval, maxval-targetval))
+    return 1.0 - errornormalized
     
+  
 
 #####################################################################
 # Processing-specific helpers
