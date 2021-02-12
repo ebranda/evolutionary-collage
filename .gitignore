@@ -12,6 +12,7 @@ out
 *.class
 *.pyc
 sketch.properties
+scratch.py
 backup.py
 adminsettings.py
 background.py

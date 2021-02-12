@@ -50,8 +50,13 @@ def save_hi_res(sketch, ga, drawing, replace=False):
 def create_report(sketch, drawing, ga, ic):
     runs = RunManager(sketch)
     create_folder(runs.run_dir_path)
+    copy_file_to(os.path.join(sketch.sketchPath(), "adminsettings.py"), os.path.join(run_dir_path(sketch)))
     copy_file_to(os.path.join(sketch.sketchPath(), "settings.py"), os.path.join(run_dir_path(sketch)))
-    return
+    
+
+def create_report_OBS(sketch, drawing, ga, ic):
+    runs = RunManager(sketch)
+    create_folder(runs.run_dir_path)
     lines = []
     def add_config(obj, lines):
         for attr in dir(obj):
@@ -171,7 +176,12 @@ def score_symmetry(matrix):
         score += rowscore / float(len(left))
     return (score / float(len(matrix))) ** 2
     
+def score_target(val, targetval, minval=0.0, maxval=1.0):
+    error = abs(val - targetval)
+    errornormalized = error / float(max(targetval-minval, maxval-targetval))
+    return 1.0 - errornormalized
     
+  
 
 #####################################################################
 # Processing-specific helpers
@@ -294,7 +304,8 @@ def copy_folder_to(folderpath, targetdir):
 
 
 def copy_file_to(filepath, targetdir):
-    shutil.copy(filepath, targetdir)
+    if os.path.isfile(filepath):
+        shutil.copy(filepath, targetdir)
 
 
 def remap(valuetoscale, minallowed, maxallowed, minold=0.0, maxold=1.0):

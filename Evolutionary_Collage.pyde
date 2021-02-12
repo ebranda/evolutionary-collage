@@ -57,7 +57,15 @@ def keyPressed():
     if key == " ": 
         ic.toggle_preview() # Use spacebar to toggle fitness images on/off
 
-    
+# Clicking in the window will pause the script
+def mouseClicked(e):
+    utils.toggle_paused()
+    if utils.is_paused():
+        print "Paused the script. Click again to resume."
+    else:
+        print "Resumed the script. Click again to pause."
+ 
+   
 # Java calls this function automatically when the program stops
 def stop():
     if not config.app.testmode:
