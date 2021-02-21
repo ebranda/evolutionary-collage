@@ -302,7 +302,8 @@ def delete_contents(directory):
 
 
 def copy_folder_to(folderpath, targetdir):
-    copy_tree(folderpath, targetdir)
+    if os.path.isdir(folderpath):
+        copy_tree(folderpath, targetdir)
 
 
 def copy_file_to(filepath, targetdir):
@@ -349,7 +350,7 @@ class GridCell(object):
 
         
 class Point(object):
-    def __init__(self, x, y):
+    def __init__(self, x=0.0, y=0.0):
         self.x = x
         self.y = y
     

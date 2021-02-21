@@ -60,7 +60,7 @@ def draw_preview(sketch):
     
     
 def img_preprocess(sketch, pImg, is_sample=False):
-    img = img_resize(pImg)
+    img = img_resize(pImg) # Note: this will make transparent backgrounds that normally return 255 from brightness(p) return 0 instead.
     pixels_for_modes = []
     modes = utils.coerce_list(config_preprocess_mode)
     imgs = [img]
@@ -71,6 +71,10 @@ def img_preprocess(sketch, pImg, is_sample=False):
             #vals = [sketch.hue(p) for p in img.pixels]
             vals = [utils.mean([sketch.red(p), sketch.green(p), sketch.blue(p)]) for p in img.pixels]
             pixels_for_modes.append(vals)
+            if is_sample:
+                img_validate_color(vals)
+        elif mode == "hue":
+            pixels_for_modes.append([sketch.hue(p) for p in img.pixels])
             if is_sample:
                 img_validate_color(vals)
         elif mode == "gray":

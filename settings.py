@@ -100,7 +100,9 @@ ic.config_strictness
 Start with 4, then try 5. Values of 6 or 7 will be more accurate but very slow to compute.
 
 ic.config_preprocess_mode
-"gray" for grayscale comparators, "binary" for pure black and white, "color" for full color comparators.
+"gray" for grayscale comparators, "binary" for pure black and white, "color" or "hue" for full color comparators.
+If you select "color" then the values from the three RGB channels will be compared; if you select "hue" then
+only the color hue value will be compared, which will have the effect of ignoring brightness.
 
 ga.max_stagnant_generations
 Sets the maximum number of unchanged generations after which the solver will stop searching.
