@@ -80,8 +80,9 @@ try:
     import fitness
     if hasattr(fitness, "compute_fitness"):
         compute_fitness = fitness.compute_fitness # Replace the default fitness function
-except: 
-    pass # No module or function found so just use default function in the current module
+except Exception as e:
+    print("Error loading custom fitness function. Using default compute_fitness().") 
+    print("{}".format(e))
 
 # Try loading the optional adminsettings module in case the
 # project wants to override any settings in settings.py
