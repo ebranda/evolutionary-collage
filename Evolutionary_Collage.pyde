@@ -4,7 +4,7 @@ import utils
 import image_comparator as ic
 import settings as config
 
-config.version = "0.45"
+config.version = "0.46"
 
 def setup():
     size(400, 400)
