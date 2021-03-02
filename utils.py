@@ -10,7 +10,10 @@ import time
 import random
 from distutils.dir_util import copy_tree
 import shutil
-import settings as config
+try:
+    import settings as config
+except:
+    pass
 
 
 def autosave(sketch, ga, drawing, fittestonly):
@@ -27,6 +30,13 @@ def save_low_res(sketch, ga):
     image = sketch.get()
     image.save(filepath)
 
+
+def save_run_output_img(sketch, img, filename):
+    runs = RunManager(sketch)
+    create_folder(runs.run_dir_path)
+    filepath = os.path.join(run_output_path(sketch), filename)
+    img.save(filepath)
+    
 
 def save_hi_res(sketch, ga, drawing, replace=False):
     '''Render and save a hi-res version of the fittest solution.'''
@@ -514,3 +524,131 @@ def stddev(data, ddof=0):
     ss = _ss(data)
     pvar = ss/(n-ddof)
     return pvar**0.5
+
+
+class KMeans(object):
+    '''K-Means clustering algorithm implementation.
+    '''
+    def __init__(self, k, max_iterations=100):
+        self.k = k
+        self.max_iterations = max_iterations
+        self.clusters = None
+        
+    def fit(self, samples):
+        clusters = []
+        for centroid in random.sample(samples, self.k):
+            clusters.append(KMeansCluster(centroid)) 
+        done = False
+        iterations = 0
+        while not done:
+            for cluster in clusters:
+                cluster.clear()
+            for sample in samples:
+                closestcluster = None
+                closestdist = None
+                for cluster in clusters:
+                    dist = cluster.dist_to_centroid(sample)
+                    if closestcluster is None or dist < closestdist:
+                        closestcluster = cluster
+                        closestdist = dist
+                closestcluster.add(sample)
+            changed = False
+            for cluster in clusters:
+                changed = changed or cluster.update_centroid()
+            iterations += 1
+            done = not changed or iterations == self.max_iterations
+        self.clusters = clusters
+        return clusters
+        
+    def silhouette_score(self):
+        '''
+        The Silhouette Coefficient for a sample is (b-a) / max(a, b). 
+        Intra-cluster distance (a) is distance of sample point to its
+        centroid and (b) is distance of sample point to nearest cluster 
+        to which it belongs. The higher the result, the better the value
+        used for k in the clustering.
+        '''
+        if not self.clusters:
+            raise RuntimeError("No clusters found. Did you call fit() first?")
+        if len(self.clusters) < 2:
+            return 0
+        coefficients = []
+        others = None
+        try:
+            for i in range(self.k):
+                cluster = self.clusters[i]
+                others = []
+                for j, other in enumerate(self.clusters):
+                    if i != j:
+                        others.append(other)
+                for sample in cluster.samples:
+                    a = cluster.dist_to_centroid(sample)
+                    b = min(other.dist_to_centroid(sample) for other in others)
+                    s = float(b - a) / max(a, b) if max(a, b) != 0 else 0
+                    coefficients.append(s)
+        except Exception as e:
+            print e
+            print len(self.clusters)
+            print len(list(others))
+            for c in self.clusters:
+                print c.c
+            raise RuntimeError()
+                
+        return sum(coefficients) / len(coefficients)
+
+
+class KMeansCluster(object):
+    '''Helper class for use by KMeans class.
+    '''
+    def __init__(self, c, samples=[]):
+        self.c = c
+        self.samples = samples
+        if samples:
+            self.update()
+            
+    def add(self, sample):
+        self.samples.append(sample)
+        
+    def clear(self):
+        self.samples = []
+        
+    def dist_to_centroid(self, sample):
+        if hasattr(self.c, '__iter__'): # Exceptions are too slow
+            # Try Euclidean distance for multi-dimensional samples
+            return math.sqrt(sum((self.c[i]-sample[i])**2 for i in range(len(self.c))))
+        else:
+            # Sample must be a simple numeric value so return difference
+            return abs(sample-self.c)
+        
+    def update_centroid(self):
+        prev = self.c
+        if self.samples:
+            if hasattr(self.c, '__iter__'): # Exceptions are too slow
+                self.c = tuple(sum(components) / float(len(components)) for components in zip(*self.samples))
+            else:
+                self.c = float(sum(self.samples)) / len(self.samples)
+        return self.c != prev
+        
+    def __str__(self):
+        return "<KMeansCluster> centroid={} samples={}".format(self.c, self.samples)
+
+
+def colorfulness(pixels):
+    ''' https://www.pyimagesearch.com/2017/06/05/computing-image-colorfulness-with-opencv-and-python/'''
+    rg = []
+    yb = []
+    for p in pixels:
+        r = (p >> 16) & 0xFF
+        g = (p >> 8) & 0xFF
+        b = p & 0xFF
+        rg.append(abs(r - g))
+        yb.append(abs(0.5 * (r + g) - b))
+    # compute the mean and standard deviation of both `rg` and `yb`
+    (rbMean, rbStd) = (mean(rg), stddev(rg))
+    (ybMean, ybStd) = (mean(yb), stddev(yb))
+    # combine the mean and standard deviations
+    stdRoot = math.sqrt((rbStd ** 2) + (ybStd ** 2))
+    meanRoot = math.sqrt((rbMean ** 2) + (ybMean ** 2))
+    # derive the "colorfulness" metric and return it
+    return stdRoot + (0.3 * meanRoot)
+    

@@ -7,22 +7,21 @@ except Exception as e:
 
 import math
 import random 
+import utils
 
 cv = None
+processedimg = None
 
-
-def detect(img, scalefactor, threshold, tolerance, drawblobs=True, polygonfactor=1.0, findholes=False, drawimage=False):
+def detect(img, scalefactor, threshold, tolerance, drawblobs=True, polygonfactor=1.0, findholes=False):
     img = img.copy() # Also required in case img is a PGraphics instance. OpenCV requires PImage.
     img.resize(int(round(scalefactor * img.width)), 0)
     global cv
-    if cv is None:
+    if cv is None or cv.width != img.width or cv.height != img.height:
         cv = OpenCV(this, img.width, img.height)
     cv.loadImage(img)
     cv.gray()
     cv.threshold(threshold)
     cv.invert()
-    if drawimage:
-        image(cv.getSnapshot(), 0, 0)
     for i in range(abs(tolerance)):
         if tolerance < 0:
             cv.erode()
@@ -30,6 +29,8 @@ def detect(img, scalefactor, threshold, tolerance, drawblobs=True, polygonfactor
             cv.dilate()
     #for t in range(tolerance):
     #    cv.open(tolerance)
+    global processedimg
+    processedimg = cv.getSnapshot()
     sortlargest = True
     contours = cv.findContours(findholes, sortlargest)
     blobs = [Blob(contour, scalefactor, polygonfactor) for contour in contours]
@@ -194,68 +195,13 @@ class Blob(object):
 
 
 
-
-def sihouette_score(clusters):
-    '''
-    The Silhouette Coefficient for a sample is (b-a) / max(a, b). 
-    Intra-cluster distance (a) is distance of sample point to its
-    centroid and (b) is distance of sample point to nearest cluster 
-    to which it belongs. The higher the result, the better the value
-    used for k in the clustering.
-    '''
-    coefficients = []
-    for cluster in clusters:
-        for sample in cluster.samples:
-            a = cluster.dist_to_centroid(sample)
-            b = min(other.dist_to_centroid(sample) for other in clusters if other.c != cluster.c)
-            s = float(b - a) / max(a, b)
-            coefficients.append(s)
-    return sum(coefficients) / len(coefficients)
-        
-class Cluster(object):
-    def __init__(self, c, samples=[]):
-        self.c = c
-        self.samples = samples
-        if samples:
-            self.update()
-    def add(self, sample):
-        self.samples.append(sample)
-    def clear(self):
-        self.samples = []
-    def dist_to_centroid(self, sample):
-        return abs(sample-self.c)
-    def update(self):
-        if self.samples:
-            self.c = float(sum(self.samples)) / len(self.samples)
-            self.sum = sum(self.samples)
-        else:
-            self.sum = 0.0
-
-
+# For backward compatibility
+km = None
 def kmeans(samples, k, max_iterations=100):
-    clusters = []
-    for centroid in random.sample(samples, k):
-        clusters.append(Cluster(centroid)) 
-    done = False
-    iterations = 0
-    while not done:
-        for cluster in clusters:
-            cluster.clear()
-        for sample in samples:
-            closestcluster = None
-            closestdist = None
-            for cluster in clusters:
-                dist = cluster.dist_to_centroid(sample)
-                if closestcluster is None or dist < closestdist:
-                    closestcluster = cluster
-                    closestdist = dist
-            closestcluster.add(sample)
-        changed = False
-        for cluster in clusters:
-            prev = cluster.c
-            cluster.update()
-            changed = cluster.c != prev
-        iterations += 1
-        done = not changed or iterations == max_iterations
-    return clusters
+    global km
+    km = utils.KMeans(k, max_iterations)
+    km.fit(samples)
+    return km.clusters
+def silhouette_score(clusters):
+    return km.silhouette_score()
     

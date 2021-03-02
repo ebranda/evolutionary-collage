@@ -48,7 +48,8 @@ def draw_preview(sketch):
     sketch.noFill()
     margin = 10
     x, y = margin, margin
-    w = h = preview_size
+    w = preview_size
+    h = int(w * (sketch.height / float(sketch.width)))
     sketch.tint(210, 230, 255)
     sketch.image(last_image, x, y, w, h)
     sketch.rect(x, y, w, h)
@@ -126,19 +127,25 @@ def compare(sketch, pImg):
     '''
     if not samples:
         load_samples(sketch)
+    validate_aspect_ratio(pImg)
     global last_image # Remember it so we can draw a preview if desired
     last_image, imgpixels = img_preprocess(sketch, pImg)
     overall_score = 0.0
-    num_pixels = len(imgpixels)
     for samplepixels in samples:
         score = 0.0
-        for i in range(num_pixels):
+        for i, p in enumerate(imgpixels):
             score += 1.0 - (abs(samplepixels[i] - imgpixels[i]) / 255.0)
-        score /= num_pixels # Mean error for all pixel comparisions for this sample
+        score /= len(imgpixels) # Mean error for all pixel comparisions for this sample
         overall_score += score
     overall_score /= len(samples) # Mean error for all sample comparisons
     return overall_score
 
+def validate_aspect_ratio(pImg):
+    imgaspectratio = round(float(pImg.width) / pImg.height, 3)
+    comparatoraspectratio = round(float(sample_images[0].width) / sample_images[0].height, 3)
+    if imgaspectratio != comparatoraspectratio:
+        print imgaspectratio, comparatoraspectratio
+        raise ValueError("Comparator image and generated image must be the same aspect ratio.")
 
 def pixel_score(px1, px2):
     score = 0
