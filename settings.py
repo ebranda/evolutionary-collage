@@ -15,6 +15,10 @@ app.autosave_fittest_only = True
 app.data_folder_name = None
 app.regulate_frame_rate = True
 
+# Optional override of default width and height of 400 x 400 for sketch window
+# width = 500
+# height = 250
+
 # Now optionally override any module settings you wish to customize.
 drawing.config_layout = "GridLayout" 
 drawing.config_number_of_parts = 25

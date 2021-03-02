@@ -6,8 +6,9 @@ import settings as config
 
 config.version = "0.46"
 
+
 def setup():
-    size(400, 400)
+    size(appwidth, appheight)
     utils.configure(drawing, config.drawing)
     utils.configure(ga, config.ga)
     utils.configure(ic, config.ic)
@@ -35,6 +36,8 @@ def draw():
             fr.start_draw()
         image(ga.fittest_phenotype(), 0, 0)
         utils.autosave(this, ga, drawing, config.app.autosave_fittest_only)
+        if ga.fitness_changed():
+            fittest_callback(this, ga)
         ga.evolve()
         ic.draw_preview(this)
         if config.app.regulate_frame_rate:
@@ -73,6 +76,11 @@ def stop():
         print("All output was saved to <{}>.".format(utils.run_dir_path(this)))
     print("Exit.")
 
+# This function can be overwritten by the fitness.py module
+# It is called after each evolution that produces a fitter solution.
+def fittest_callback(sketch, ga):
+    pass
+
     
 # Try loading the optional fitness module in case the
 # project wants to define a its own fitness function.
@@ -80,8 +88,12 @@ try:
     import fitness
     if hasattr(fitness, "compute_fitness"):
         compute_fitness = fitness.compute_fitness # Replace the default fitness function
+    else:
+        print("No compute_fitness() function found in fitness.py... using default.") 
+    if hasattr(fitness, "fittest_callback"):
+        fittest_callback = fitness.fittest_callback # Replace the default callback function
 except Exception as e:
-    print("Error loading custom fitness function. Using default compute_fitness().") 
+    print("No custom fitness function found... using default compute_fitness().") 
     print("{}".format(e))
 
 # Try loading the optional adminsettings module in case the
@@ -91,4 +103,8 @@ try:
     adminsettings.override(config)
 except:
     pass
+
+appwidth = config.width if hasattr(config, "width") else 400
+appheight = config.height if hasattr(config, "height") else 400
+
     

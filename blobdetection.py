@@ -10,20 +10,18 @@ import random
 import utils
 
 cv = None
+processedimg = None
 
-
-def detect(img, scalefactor, threshold, tolerance, drawblobs=True, polygonfactor=1.0, findholes=False, drawimage=False):
+def detect(img, scalefactor, threshold, tolerance, drawblobs=True, polygonfactor=1.0, findholes=False):
     img = img.copy() # Also required in case img is a PGraphics instance. OpenCV requires PImage.
     img.resize(int(round(scalefactor * img.width)), 0)
     global cv
-    if cv is None:
+    if cv is None or cv.width != img.width or cv.height != img.height:
         cv = OpenCV(this, img.width, img.height)
     cv.loadImage(img)
     cv.gray()
     cv.threshold(threshold)
     cv.invert()
-    if drawimage:
-        image(cv.getSnapshot(), 0, 0)
     for i in range(abs(tolerance)):
         if tolerance < 0:
             cv.erode()
@@ -31,6 +29,8 @@ def detect(img, scalefactor, threshold, tolerance, drawblobs=True, polygonfactor
             cv.dilate()
     #for t in range(tolerance):
     #    cv.open(tolerance)
+    global processedimg
+    processedimg = cv.getSnapshot()
     sortlargest = True
     contours = cv.findContours(findholes, sortlargest)
     blobs = [Blob(contour, scalefactor, polygonfactor) for contour in contours]

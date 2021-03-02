@@ -10,7 +10,10 @@ import time
 import random
 from distutils.dir_util import copy_tree
 import shutil
-import settings as config
+try:
+    import settings as config
+except:
+    pass
 
 
 def autosave(sketch, ga, drawing, fittestonly):
@@ -27,6 +30,13 @@ def save_low_res(sketch, ga):
     image = sketch.get()
     image.save(filepath)
 
+
+def save_run_output_img(sketch, img, filename):
+    runs = RunManager(sketch)
+    create_folder(runs.run_dir_path)
+    filepath = os.path.join(run_output_path(sketch), filename)
+    img.save(filepath)
+    
 
 def save_hi_res(sketch, ga, drawing, replace=False):
     '''Render and save a hi-res version of the fittest solution.'''
@@ -560,13 +570,30 @@ class KMeans(object):
         '''
         if not self.clusters:
             raise RuntimeError("No clusters found. Did you call fit() first?")
+        if len(self.clusters) < 2:
+            return 0
         coefficients = []
-        for cluster in self.clusters:
-            for sample in cluster.samples:
-                a = cluster.dist_to_centroid(sample)
-                b = min(other.dist_to_centroid(sample) for other in self.clusters if other.c != cluster.c)
-                s = float(b - a) / max(a, b)
-                coefficients.append(s)
+        others = None
+        try:
+            for i in range(self.k):
+                cluster = self.clusters[i]
+                others = []
+                for j, other in enumerate(self.clusters):
+                    if i != j:
+                        others.append(other)
+                for sample in cluster.samples:
+                    a = cluster.dist_to_centroid(sample)
+                    b = min(other.dist_to_centroid(sample) for other in others)
+                    s = float(b - a) / max(a, b) if max(a, b) != 0 else 0
+                    coefficients.append(s)
+        except Exception as e:
+            print e
+            print len(self.clusters)
+            print len(list(others))
+            for c in self.clusters:
+                print c.c
+            raise RuntimeError()
+                
         return sum(coefficients) / len(coefficients)
 
 
@@ -606,4 +633,22 @@ class KMeansCluster(object):
         return "<KMeansCluster> centroid={} samples={}".format(self.c, self.samples)
 
 
-
+def colorfulness(pixels):
+    ''' https://www.pyimagesearch.com/2017/06/05/computing-image-colorfulness-with-opencv-and-python/'''
+    rg = []
+    yb = []
+    for p in pixels:
+        r = (p >> 16) & 0xFF
+        g = (p >> 8) & 0xFF
+        b = p & 0xFF
+        rg.append(abs(r - g))
+        yb.append(abs(0.5 * (r + g) - b))
+    # compute the mean and standard deviation of both `rg` and `yb`
+    (rbMean, rbStd) = (mean(rg), stddev(rg))
+    (ybMean, ybStd) = (mean(yb), stddev(yb))
+    # combine the mean and standard deviations
+    stdRoot = math.sqrt((rbStd ** 2) + (ybStd ** 2))
+    meanRoot = math.sqrt((rbMean ** 2) + (ybMean ** 2))
+    # derive the "colorfulness" metric and return it
+    return stdRoot + (0.3 * meanRoot)
+    
